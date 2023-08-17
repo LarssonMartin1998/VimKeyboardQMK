@@ -24,8 +24,8 @@
 
 #define COMBO_STRICT_TIMER
 
-#define HSV_FN            95, 255, 255
-#define HSV_GAME          30, 255, 255
+#define HSV_FN            60, 255, 245
+#define HSV_GAME          30, 235, 225
 
 enum combo_events {
     CHANGE_TO_VIM_LAYER

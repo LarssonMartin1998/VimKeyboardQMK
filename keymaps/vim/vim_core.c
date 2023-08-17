@@ -3,6 +3,7 @@
 
 #include "command_mode.h"
 #include "delete_mode.h"
+#include "yank_mode.h"
 
 #include "layers.h"
 #include "utils.h"
@@ -12,9 +13,9 @@ uint8_t modes_color_h[] = {
     147,
     0,
     0,
+    81,
     190,
-    47,
-    105
+    47
 };
 
 uint8_t modes_color_s[] = {
@@ -52,6 +53,11 @@ void on_vim_layer_activated(void) {
 
 void handle_vim_mode(uint16_t keycode, keyrecord_t* record) {
     if (!record->event.pressed) {
+        return;
+    }
+
+    if (keycode == KC_ESC) {
+        reset_data();
         return;
     }
 
@@ -119,6 +125,9 @@ void forward_keycode_to_current_mode(uint16_t keycode) {
         case delete:
         case change:
             delete_mode_process_keycode(keycode);
+            break;
+        case yank:
+            yank_mode_process_keycode(keycode);
             break;
     }
 }

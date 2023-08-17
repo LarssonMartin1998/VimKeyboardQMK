@@ -18,3 +18,4 @@ SRC += vim_core.c
 SRC += utils.c
 SRC += command_mode.c
 SRC += delete_mode.c
+SRC += yank_mode.c

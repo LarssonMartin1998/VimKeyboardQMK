@@ -2,12 +2,14 @@
 
 #include "vim_core.h"
 #include "delete_mode.h"
+#include "yank_mode.h"
 
 #include "layers.h"
 #include "utils.h"
 
 void command_enter_change_mode(void);
 void command_enter_delete_mode(void);
+void command_enter_yank_mode(void);
 void command_enter_insert_mode_at_beginning_of_line(void);
 void command_enter_insert_mode_at_end_of_line(void);
 void command_enter_insert_mode_after(void);
@@ -91,6 +93,8 @@ void command_mode_process_keycode(uint16_t keycode) {
         case KC_Y:
             if (is_ctrl_held()) {
                 command_scroll_up();
+            } else {
+                command_enter_yank_mode();
             }
             break;
         case KC_O:
@@ -117,6 +121,10 @@ void command_enter_change_mode(void) {
 
 void command_enter_delete_mode(void) {
     set_current_mode(delete);
+}
+
+void command_enter_yank_mode(void) {
+    set_current_mode(yank);
 }
 
 void command_enter_insert_mode(void) {

@@ -7,8 +7,8 @@ enum mode {
     command, // blue
     delete, // red
     change, // red
+    yank, // green
     //visual, // purple
-    //copy
     //replace, // yellow
 };
 
