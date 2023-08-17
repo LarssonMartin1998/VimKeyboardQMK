@@ -9,6 +9,7 @@
 void command_enter_change_mode(void);
 void command_enter_delete_mode(void);
 void command_enter_insert_mode_after(void);
+void command_enter_insert_mode_on_new_row(void);
 void command_undo(void);
 void command_redo(void);
 
@@ -35,6 +36,10 @@ void command_mode_process_keycode(uint16_t keycode) {
         case KC_D:
             command_enter_delete_mode();
             break;
+        case KC_X:
+            // Forward to delete mode as X is a delete command
+            delete_mode_process_keycode(keycode);
+            break;
         case KC_U:
             command_undo();
             break;
@@ -58,9 +63,8 @@ void command_mode_process_keycode(uint16_t keycode) {
         case KC_L:
             command_right();
             break;
-        case KC_X:
-            // Forward to delete mode as X is a delete command
-            delete_mode_process_keycode(keycode);
+        case KC_O:
+            command_enter_insert_mode_on_new_row();
             break;
         case KC_TAB: // These three commands deviate from Vim, however, it makes the Vim Layer more useful when navigating things outside coding like forms.
             command_enter_insert_mode();
@@ -92,6 +96,23 @@ void command_enter_insert_mode(void) {
 
 void command_enter_insert_mode_after(void) {
     command_right();
+    command_enter_insert_mode();
+}
+
+void command_enter_insert_mode_on_new_row(void) {
+    const bool make_new_row_above = is_shift_held();
+    if (make_new_row_above) {
+        command_go_to_beginning_of_line();
+    } else {
+        command_go_to_end_of_line();
+    }
+
+    tap_code(KC_ENT);
+
+    if (make_new_row_above) {
+        command_up();
+    }
+
     command_enter_insert_mode();
 }
 
