@@ -74,6 +74,14 @@ void set_right_ctrl_released(void) {
     modifiers_state_mask &= ~LALT_BIT;
 }
 
+bool is_right_ctrl_held(void) {
+    return modifiers_state_mask & RCTL_BIT;
+}
+
+bool is_ctrl_held(void) {
+    return is_left_ctrl_held() || is_right_ctrl_held();
+}
+
 void set_left_alt_held(void) {
     modifiers_state_mask |= LALT_BIT;
 }

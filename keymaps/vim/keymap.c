@@ -18,7 +18,7 @@
 
 #include <process_combo.h>
 
-#include "vimmode.h"
+#include "vim_core.h"
 #include "layers.h"
 #include "utils.h"
 
