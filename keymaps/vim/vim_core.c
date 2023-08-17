@@ -162,10 +162,28 @@ bool append_repeat(uint8_t r) {
     return false;
 }
 
+uint8_t get_num_repeats(void) {
+    return num_repeats;
+}
+
+void set_num_repeats(uint8_t r) {
+    num_repeats = r;
+}
+
 void repeating_tap_code(uint16_t keycode) {
     for (uint8_t i = 0; i < num_repeats; i++) {
         tap_code(keycode);
     }
+
+    reset_data();
+}
+
+void repeating_tap_code_with_os_modifier(uint16_t keycode) {
+    register_code(get_os_key());
+    for (uint8_t i = 0; i < num_repeats; i++) {
+        tap_code(keycode);
+    }
+    unregister_code(get_os_key());
 
     reset_data();
 }

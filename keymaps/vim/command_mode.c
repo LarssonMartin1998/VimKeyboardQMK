@@ -10,6 +10,8 @@ void command_enter_change_mode(void);
 void command_enter_delete_mode(void);
 void command_enter_insert_mode_after(void);
 void command_enter_insert_mode_on_new_row(void);
+void command_scroll_up(void);
+void command_scroll_down(void);
 void command_undo(void);
 void command_redo(void);
 
@@ -37,7 +39,7 @@ void command_mode_process_keycode(uint16_t keycode) {
             command_enter_delete_mode();
             break;
         case KC_X:
-            // Forward to delete mode as X is a delete command
+        case KC_S:
             delete_mode_process_keycode(keycode);
             break;
         case KC_U:
@@ -62,6 +64,24 @@ void command_mode_process_keycode(uint16_t keycode) {
             break;
         case KC_L:
             command_right();
+            break;
+        case KC_W:
+            command_go_to_next_word();
+            break;
+        case KC_B:
+            command_go_to_beginning_of_word();
+            break;
+        case KC_E:
+            if (is_ctrl_held()) {
+                command_scroll_down();
+            } else {
+                command_go_to_end_of_word();
+            }
+            break;
+        case KC_Y:
+            if (is_ctrl_held()) {
+                command_scroll_up();
+            }
             break;
         case KC_O:
             command_enter_insert_mode_on_new_row();
@@ -124,6 +144,14 @@ void command_go_to_end_of_line(void) {
     tap_code(KC_END);
 }
 
+void command_scroll_down(void) {
+    repeating_tap_code(KC_WH_D);
+}
+
+void command_scroll_up(void) {
+    repeating_tap_code(KC_WH_U);
+}
+
 void command_undo(void) {
     const uint16_t os_key = get_os_key();
     register_code(os_key);
@@ -160,4 +188,21 @@ void command_up(void) {
 
 void command_right(void) {
     repeating_tap_code(KC_RIGHT);
+}
+
+void command_go_to_next_word(void) {
+    uint8_t num_repeats = get_num_repeats();
+    for (uint8_t i = 0; i < num_repeats; i++) {
+        set_num_repeats(2);
+        command_go_to_end_of_word();
+        command_go_to_beginning_of_word();
+    }
+}
+
+void command_go_to_beginning_of_word(void) {
+    repeating_tap_code_with_os_modifier(KC_LEFT);
+}
+
+void command_go_to_end_of_word(void) {
+    repeating_tap_code_with_os_modifier(KC_RIGHT);
 }

@@ -11,3 +11,6 @@ void command_left(void);
 void command_down(void);
 void command_up(void);
 void command_right(void);
+void command_go_to_next_word(void);
+void command_go_to_beginning_of_word(void);
+void command_go_to_end_of_word(void);

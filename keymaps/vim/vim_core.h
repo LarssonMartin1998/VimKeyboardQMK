@@ -23,5 +23,8 @@ void set_current_mode(uint8_t new_mode);
 void reset_data(void);
 void clear_repeat(void);
 bool append_repeat(uint8_t r);
+uint8_t get_num_repeats(void);
+void set_num_repeats(uint8_t r);
 
 void repeating_tap_code(uint16_t keycode);
+void repeating_tap_code_with_os_modifier(uint16_t keycode);

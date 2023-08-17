@@ -3,6 +3,8 @@
 #include "vim_core.h"
 #include "command_mode.h"
 
+#include "utils.h"
+
 void command_erase_all_on_current_row(void);
 void command_erase_upwards(void);
 void command_erase_downwards(void);
@@ -39,6 +41,16 @@ void delete_mode_process_keycode(uint16_t keycode) {
             }
 
             command_erase_current_row();
+            performed_command = true;
+            break;
+        case KC_S:
+            is_change_mode = true;
+            if (is_shift_held()) {
+                command_erase_all_on_current_row();
+            } else {
+                command_erase_right();
+            }
+
             performed_command = true;
             break;
         case KC_H:
