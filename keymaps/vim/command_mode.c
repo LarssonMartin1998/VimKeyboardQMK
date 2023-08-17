@@ -8,8 +8,10 @@
 
 void command_enter_change_mode(void);
 void command_enter_delete_mode(void);
+void command_enter_insert_mode_at_beginning_of_line(void);
+void command_enter_insert_mode_at_end_of_line(void);
 void command_enter_insert_mode_after(void);
-void command_enter_insert_mode_on_new_row(void);
+void command_enter_insert_mode_on_new_line(void);
 void command_scroll_up(void);
 void command_scroll_down(void);
 void command_undo(void);
@@ -27,10 +29,18 @@ void command_mode_process_keycode(uint16_t keycode) {
             command_go_to_beginning_of_line();
             break;
         case KC_A:
-            command_enter_insert_mode_after();
+            if (is_shift_held()) {
+                command_enter_insert_mode_at_end_of_line();
+            } else {
+                command_enter_insert_mode_after();
+            }
             break;
         case KC_I:
-            command_enter_insert_mode();
+            if (is_shift_held()) {
+                command_enter_insert_mode_at_beginning_of_line();
+            } else {
+                command_enter_insert_mode();
+            }
             break;
         case KC_C:
             command_enter_change_mode();
@@ -84,7 +94,7 @@ void command_mode_process_keycode(uint16_t keycode) {
             }
             break;
         case KC_O:
-            command_enter_insert_mode_on_new_row();
+            command_enter_insert_mode_on_new_line();
             break;
         case KC_TAB: // These three commands deviate from Vim, however, it makes the Vim Layer more useful when navigating things outside coding like forms.
             command_enter_insert_mode();
@@ -114,14 +124,24 @@ void command_enter_insert_mode(void) {
     layer_off(VIM);
 }
 
+void command_enter_insert_mode_at_beginning_of_line(void) {
+    command_go_to_beginning_of_line();
+    command_enter_insert_mode();
+}
+
+void command_enter_insert_mode_at_end_of_line(void) {
+    command_go_to_end_of_line();
+    command_enter_insert_mode();
+}
+
 void command_enter_insert_mode_after(void) {
     command_right();
     command_enter_insert_mode();
 }
 
-void command_enter_insert_mode_on_new_row(void) {
-    const bool make_new_row_above = is_shift_held();
-    if (make_new_row_above) {
+void command_enter_insert_mode_on_new_line(void) {
+    const bool make_new_line_above = is_shift_held();
+    if (make_new_line_above) {
         command_go_to_beginning_of_line();
     } else {
         command_go_to_end_of_line();
@@ -129,7 +149,7 @@ void command_enter_insert_mode_on_new_row(void) {
 
     tap_code(KC_ENT);
 
-    if (make_new_row_above) {
+    if (make_new_line_above) {
         command_up();
     }
 
