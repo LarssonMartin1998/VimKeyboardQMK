@@ -20,6 +20,7 @@ void update_hsv_from_mode(void);
 enum mode get_current_mode(void);
 void set_current_mode(uint8_t new_mode);
 
+bool is_command_inside(void);
 void activate_inside_mode_for_next_command(void);
 
 void reset_data(void);

@@ -147,6 +147,10 @@ void set_current_mode(uint8_t new_mode) {
     update_hsv_from_mode();
 }
 
+bool is_command_inside(void) {
+    return command_is_inside;
+}
+
 void activate_inside_mode_for_next_command(void) {
     if (command_is_inside) {
         reset_data();

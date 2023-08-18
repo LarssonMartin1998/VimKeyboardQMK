@@ -16,6 +16,7 @@ void command_erase_right(void);
 void command_erase_to_next_word(void);
 void command_erase_to_beginning_of_word(void);
 void command_erase_to_end_of_word(void);
+void command_erase_in_word(void);
 
 void delete_mode_process_keycode(uint16_t keycode) {
     bool performed_command = false;
@@ -89,7 +90,12 @@ void delete_mode_process_keycode(uint16_t keycode) {
             performed_command = true;
             break;
         case KC_W:
-            command_erase_to_next_word();
+            if (is_command_inside()) {
+                command_erase_in_word();
+            } else {
+                command_erase_to_next_word();
+            }
+
             performed_command = true;
             break;
         case KC_B:
@@ -179,4 +185,13 @@ void command_erase_to_end_of_word(void) {
     command_go_to_end_of_word();
     unregister_code(KC_LSFT);
     command_erase_right();
+}
+
+void command_erase_in_word(void) {
+    set_num_repeats(1);
+    command_go_to_end_of_word();
+    register_code(KC_LSFT);
+    command_go_to_beginning_of_word();
+    unregister_code(KC_LSFT);
+    command_erase_left();
 }
