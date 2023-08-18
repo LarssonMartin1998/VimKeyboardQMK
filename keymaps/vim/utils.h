@@ -32,3 +32,7 @@ bool is_alt_held(void);
 void set_backspace_held(void);
 void set_backspace_released(void);
 bool is_backspace_held(void);
+
+void tap_insert_and_update_active_state(void);
+void toggle_insert_active_state(void);
+bool is_insert_active(void);

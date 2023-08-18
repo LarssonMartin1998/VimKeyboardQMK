@@ -1,8 +1,8 @@
-//
-// Created by walnut on 2023-08-18.
-//
+#pragma once
 
-#ifndef QMK_FIRMWARE_REPLACE_MODE_H
-#define QMK_FIRMWARE_REPLACE_MODE_H
+#include QMK_KEYBOARD_H
 
-#endif // QMK_FIRMWARE_REPLACE_MODE_H
+void replace_mode_process_keycode(uint16_t keycode);
+void replace_mode_reset(void);
+
+void command_enter_replace_mode_for_one_char(void);

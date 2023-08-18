@@ -2,6 +2,7 @@
 
 #include "vim_core.h"
 #include "delete_mode.h"
+#include "replace_mode.h"
 #include "yank_mode.h"
 #include "goto_vimlayer.h"
 
@@ -19,6 +20,7 @@ void command_scroll_up(void);
 void command_scroll_down(void);
 void command_undo(void);
 void command_redo(void);
+void command_search(void);
 
 void command_mode_process_keycode(uint16_t keycode) {
     if (goto_vimlayer_process_keycode(keycode)) {
@@ -81,8 +83,13 @@ void command_mode_process_keycode(uint16_t keycode) {
                 command_redo();
                 break;
             }
-
-            // Forward to future replace mode
+            else {
+                if (is_shift_held()) {
+                    set_current_mode(replace);
+                } else {
+                    command_enter_replace_mode_for_one_char();
+                }
+            }
             break;
         case KC_H:
             command_left();
@@ -118,6 +125,9 @@ void command_mode_process_keycode(uint16_t keycode) {
             break;
         case KC_O:
             command_enter_insert_mode_on_new_line();
+            break;
+        case KC_SLSH:
+            command_search();
             break;
         case KC_TAB: // These three commands deviate from Vim, however, it makes the Vim Layer more useful when navigating things outside coding like forms.
             command_enter_insert_mode();
@@ -288,4 +298,12 @@ void command_go_to_end_of_document(void) {
 
     unregister_code(os_key);
     goto_vimlayer_reset();
+}
+
+void command_search(void) {
+    const uint16_t os_key = get_os_key(KC_LCMD);
+    register_code(os_key);
+    tap_code(KC_F);
+    unregister_code(os_key);
+    command_enter_insert_mode();
 }

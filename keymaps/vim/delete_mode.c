@@ -48,18 +48,19 @@ void delete_mode_process_keycode(uint16_t keycode) {
             performed_command = true;
             break;
         case KC_C:
-            if (!is_change_mode) {
+            if (is_change_mode && is_shift_held()) {
                 reset_data();
                 return;
             }
 
             if (is_shift_held()) {
-                is_change_mode = true;
                 command_erase_line_forwards();
+                is_change_mode = true;
             } else {
                 command_erase_all_on_current_line();
-                performed_command = true;
             }
+
+            performed_command = true;
             break;
         case KC_D:
             if (is_change_mode) {
@@ -71,8 +72,9 @@ void delete_mode_process_keycode(uint16_t keycode) {
                 command_erase_line_forwards();
             } else {
                 command_erase_current_line();
-                performed_command = true;
             }
+
+            performed_command = true;
             break;
         case KC_I:
             activate_inside_mode_for_next_command();
@@ -100,9 +102,15 @@ void delete_mode_process_keycode(uint16_t keycode) {
             performed_command = true;
             break;
         case KC_L:
-        case KC_X:
             command_erase_right();
             performed_command = true;
+            break;
+        case KC_X:
+            if (is_shift_held()) {
+                command_erase_left();
+            } else {
+                command_erase_right();
+            }
             break;
         case KC_W:
             if (is_command_inside()) {

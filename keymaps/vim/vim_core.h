@@ -7,17 +7,18 @@ enum mode {
     command, // blue
     delete, // red
     change, // red
-    yank, // green
-    //visual, // purple
-    //replace, // yellow
+    replace, // red
+    yank, // yellow
 };
 
 void on_vim_layer_activated(void);
-void handle_vim_mode(uint16_t keycode, keyrecord_t* record);
+bool handle_vim_mode(uint16_t keycode, keyrecord_t* record);
 
 void update_hsv_from_mode(void);
 
-enum mode get_current_mode(void);
+bool vim_should_cancel_insert(void);
+void vim_cancel_insert(void);
+uint8_t get_current_mode(void);
 void set_current_mode(uint8_t new_mode);
 
 bool is_command_inside(void);

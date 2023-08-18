@@ -14,6 +14,7 @@
 #define LALT_BIT (1 << 4)
 #define RALT_BIT (1 << 5)
 #define BACKSPACE_BIT (1 << 6)
+#define INSERT_BIT (1 << 7)
 
 unsigned char modifiers_state_mask = 0x00;
 
@@ -129,4 +130,17 @@ void set_backspace_released(void) {
 
 bool is_backspace_held(void) {
     return modifiers_state_mask & BACKSPACE_BIT;
+}
+
+void tap_insert_and_update_active_state() {
+    tap_code(KC_INS);
+    toggle_insert_active_state();
+}
+
+void toggle_insert_active_state(void) {
+    modifiers_state_mask ^= INSERT_BIT;
+}
+
+bool is_insert_active(void) {
+    return modifiers_state_mask & INSERT_BIT;
 }
