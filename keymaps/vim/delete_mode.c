@@ -5,10 +5,10 @@
 
 #include "utils.h"
 
-void command_erase_all_on_current_row(void);
+void command_erase_all_on_current_line(void);
 void command_erase_upwards(void);
 void command_erase_downwards(void);
-void command_erase_current_row(void);
+void command_erase_current_line(void);
 void command_erase_left(void);
 void command_erase_right(void);
 
@@ -18,11 +18,11 @@ void delete_mode_process_keycode(uint16_t keycode) {
 
     switch (keycode) {
         case KC_4:
-            // Erase row forwards
+            // Erase line forwards
             performed_command = true;
             break;
         case KC_6:
-            // Erase row backwards
+            // Erase line backwards
             performed_command = true;
             break;
         case KC_C:
@@ -31,7 +31,7 @@ void delete_mode_process_keycode(uint16_t keycode) {
                 return;
             }
 
-            command_erase_all_on_current_row();
+            command_erase_all_on_current_line();
             performed_command = true;
             break;
         case KC_D:
@@ -40,7 +40,7 @@ void delete_mode_process_keycode(uint16_t keycode) {
                 return;
             }
 
-            command_erase_current_row();
+            command_erase_current_line();
             performed_command = true;
             break;
         case KC_I:
@@ -49,7 +49,7 @@ void delete_mode_process_keycode(uint16_t keycode) {
         case KC_S:
             is_change_mode = true;
             if (is_shift_held()) {
-                command_erase_all_on_current_row();
+                command_erase_all_on_current_line();
             } else {
                 command_erase_right();
             }
@@ -80,8 +80,8 @@ void delete_mode_process_keycode(uint16_t keycode) {
     }
 }
 
-void command_erase_all_on_current_row(void) {
-    command_erase_current_row();
+void command_erase_all_on_current_line(void) {
+    command_erase_current_line();
     tap_code(KC_ENT);
     command_up();
 }
@@ -103,7 +103,7 @@ void command_erase_downwards(void) {
     unregister_code(KC_LSFT);
     tap_code(KC_DEL);
 }
-void command_erase_current_row(void) {
+void command_erase_current_line(void) {
     command_go_to_beginning_of_line();
     register_code(KC_LSFT);
     command_go_to_end_of_line();
