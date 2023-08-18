@@ -43,6 +43,9 @@ void delete_mode_process_keycode(uint16_t keycode) {
             command_erase_current_row();
             performed_command = true;
             break;
+        case KC_I:
+            activate_inside_mode_for_next_command();
+            break;
         case KC_S:
             is_change_mode = true;
             if (is_shift_held()) {

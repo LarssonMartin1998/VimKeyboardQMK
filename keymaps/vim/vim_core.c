@@ -38,6 +38,7 @@ uint8_t modes_color_v[] = {
     255
 };
 
+bool command_is_inside = false; // Difficult name, but if 'I' is pressed in delete/change/yank, delete IN word, yank IN word etc
 bool is_repeating = false;
 uint8_t num_repeats = 1;
 enum mode current_mode = insert;
@@ -146,7 +147,16 @@ void set_current_mode(uint8_t new_mode) {
     update_hsv_from_mode();
 }
 
+void activate_inside_mode_for_next_command(void) {
+    if (command_is_inside) {
+        reset_data();
+    } else {
+        command_is_inside = true;
+    }
+}
+
 void reset_data(void) {
+    command_is_inside = false;
     clear_repeat();
     set_current_mode(command);
 }
