@@ -5,12 +5,15 @@
 
 #include "utils.h"
 
+void command_erase_line_forwards(void);
+void command_erase_line_backwards(void);
 void command_erase_all_on_current_line(void);
 void command_erase_upwards(void);
 void command_erase_downwards(void);
 void command_erase_current_line(void);
 void command_erase_left(void);
 void command_erase_right(void);
+v
 
 void delete_mode_process_keycode(uint16_t keycode) {
     bool performed_command = false;
@@ -18,11 +21,12 @@ void delete_mode_process_keycode(uint16_t keycode) {
 
     switch (keycode) {
         case KC_4:
-            // Erase line forwards
+            command_erase_line_forwards();
             performed_command = true;
             break;
         case KC_6:
-            // Erase line backwards
+        case KC_0:
+            command_erase_line_backwards();
             performed_command = true;
             break;
         case KC_C:
@@ -31,8 +35,13 @@ void delete_mode_process_keycode(uint16_t keycode) {
                 return;
             }
 
-            command_erase_all_on_current_line();
-            performed_command = true;
+            if (is_shift_held()) {
+                is_change_mode = true;
+                command_erase_line_forwards();
+            } else {
+                command_erase_all_on_current_line();
+                performed_command = true;
+            }
             break;
         case KC_D:
             if (is_change_mode) {
@@ -40,8 +49,12 @@ void delete_mode_process_keycode(uint16_t keycode) {
                 return;
             }
 
-            command_erase_current_line();
-            performed_command = true;
+            if (is_shift_held()) {
+                command_erase_line_forwards();
+            } else {
+                command_erase_current_line();
+                performed_command = true;
+            }
             break;
         case KC_I:
             activate_inside_mode_for_next_command();
@@ -73,11 +86,34 @@ void delete_mode_process_keycode(uint16_t keycode) {
             command_erase_right();
             performed_command = true;
             break;
+        case KC_W:
+            command_go_to_next_word();
+            break;
+        case KC_B:
+            command_go_to_beginning_of_word();
+            break;
+        case KC_E:
+            command_go_to_end_of_word();
+            break;
     }
 
     if (performed_command && is_change_mode) {
         command_enter_insert_mode();
     }
+}
+
+void command_erase_line_forwards(void) {
+    register_code(KC_LSFT);
+    command_go_to_end_of_line();
+    command_erase_left();
+    unregister_code(KC_LSFT);
+}
+
+void command_erase_line_backwards(void) {
+    register_code(KC_LSFT);
+    command_go_to_beginning_of_line();
+    command_erase_right();
+    unregister_code(KC_LSFT);
 }
 
 void command_erase_all_on_current_line(void) {

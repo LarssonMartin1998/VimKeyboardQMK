@@ -45,10 +45,18 @@ void command_mode_process_keycode(uint16_t keycode) {
             }
             break;
         case KC_C:
-            command_enter_change_mode();
+            if (is_shift_held()) {
+                delete_mode_process_keycode(keycode);
+            } else {
+                command_enter_change_mode();
+            }
             break;
         case KC_D:
-            command_enter_delete_mode();
+            if (is_shift_held()) {
+                delete_mode_process_keycode(keycode);
+            } else {
+                command_enter_delete_mode();
+            }
             break;
         case KC_X:
         case KC_S:
