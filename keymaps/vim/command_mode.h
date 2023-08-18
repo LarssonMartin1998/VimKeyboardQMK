@@ -14,3 +14,5 @@ void command_right(void);
 void command_go_to_next_word(void);
 void command_go_to_beginning_of_word(void);
 void command_go_to_end_of_word(void);
+void command_go_to_beginning_of_document(void);
+void command_go_to_end_of_document(void);

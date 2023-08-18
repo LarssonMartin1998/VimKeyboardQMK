@@ -19,3 +19,4 @@ SRC += utils.c
 SRC += command_mode.c
 SRC += delete_mode.c
 SRC += yank_mode.c
+SRC += goto_vimlayer.c

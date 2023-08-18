@@ -3,7 +3,7 @@
 #include QMK_KEYBOARD_H
 
 bool is_mac_os(void);
-uint16_t get_os_key(void);
+uint16_t get_os_key(uint16_t mac_alternative);
 
 void set_left_shift_held(void);
 void set_left_shift_released(void);

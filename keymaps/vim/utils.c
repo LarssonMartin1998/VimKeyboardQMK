@@ -4,6 +4,9 @@
 
 #include "layers.h"
 
+#define SUPPORTS_MAC
+#define SUPPORTS_WIN // Same as Linux
+
 #define LSFT_BIT (1 << 0)
 #define RSFT_BIT (1 << 1)
 #define LCTL_BIT (1 << 2)
@@ -15,12 +18,18 @@
 unsigned char modifiers_state_mask = 0x00;
 
 bool is_mac_os(void) {
+#if defined(SUPPORTS_MAC) && defined(SUPPORTS_WIN)
     return layer_state_is(MAC);
+#elif defined(SUPPORTS_MAC)
+    return true;
+#elif defined(SUPPORTS_WIN)
+    return false;
+#endif
 }
 
-uint16_t get_os_key(void) {
+uint16_t get_os_key(uint16_t mac_alternative) {
     if (is_mac_os()) {
-        return KC_LCMD;
+        return mac_alternative;
     } else {
         return KC_LCTL;
     }

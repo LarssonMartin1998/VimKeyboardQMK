@@ -2,6 +2,7 @@
 
 #include "vim_core.h"
 #include "command_mode.h"
+#include "goto_vimlayer.h"
 
 #include "utils.h"
 
@@ -17,10 +18,24 @@ void command_erase_to_next_word(void);
 void command_erase_to_beginning_of_word(void);
 void command_erase_to_end_of_word(void);
 void command_erase_in_word(void);
+void command_erase_to_beginning_of_document(void);
+void command_erase_to_end_of_document(void);
 
 void delete_mode_process_keycode(uint16_t keycode) {
     bool performed_command = false;
     bool is_change_mode = get_current_mode() == change;
+
+    if (goto_vimlayer_process_keycode(keycode)) {
+        if (wants_to_go_to_beginning_of_document()) {
+            command_erase_to_beginning_of_document();
+            performed_command = true;
+        } else if (wants_to_go_to_end_of_document()) {
+            command_erase_to_end_of_document();
+            performed_command = true;
+        }
+
+        goto skip_switchcase;
+    }
 
     switch (keycode) {
         case KC_4:
@@ -108,6 +123,7 @@ void delete_mode_process_keycode(uint16_t keycode) {
             break;
     }
 
+skip_switchcase:
     if (performed_command && is_change_mode) {
         command_enter_insert_mode();
     }
@@ -194,4 +210,18 @@ void command_erase_in_word(void) {
     command_go_to_beginning_of_word();
     unregister_code(KC_LSFT);
     command_erase_left();
+}
+
+void command_erase_to_beginning_of_document(void) {
+    register_code(KC_LSFT);
+    command_go_to_beginning_of_document();
+    unregister_code(KC_LSFT);
+    command_erase_left();
+}
+
+void command_erase_to_end_of_document(void) {
+    register_code(KC_LSFT);
+    command_go_to_end_of_document();
+    unregister_code(KC_LSFT);
+    command_erase_right();
 }

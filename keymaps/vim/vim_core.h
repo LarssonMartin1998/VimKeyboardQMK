@@ -30,5 +30,5 @@ uint8_t get_num_repeats(void);
 void set_num_repeats(uint8_t r);
 
 void repeating_tap_code(uint16_t keycode);
-void repeating_tap_code_with_os_modifier(uint16_t keycode);
-void tap_code_with_os_modifier(uint16_t keycode);
+void repeating_tap_code_with_os_modifier(uint16_t keycode, uint16_t mac_alternative);
+void tap_code_with_os_modifier(uint16_t keycode, uint16_t mac_alternative);

@@ -4,6 +4,7 @@
 #include "command_mode.h"
 #include "delete_mode.h"
 #include "yank_mode.h"
+#include "goto_vimlayer.h"
 
 #include "layers.h"
 #include "utils.h"
@@ -49,7 +50,6 @@ void forward_keycode_to_current_mode(uint16_t keycode);
 void on_vim_layer_activated(void) {
     num_repeats = 1;
     set_current_mode(command);
-    command_left();
 }
 
 void handle_vim_mode(uint16_t keycode, keyrecord_t* record) {
@@ -162,6 +162,7 @@ void activate_inside_mode_for_next_command(void) {
 void reset_data(void) {
     command_is_inside = false;
     clear_repeat();
+    goto_vimlayer_reset();
     set_current_mode(command);
 }
 
@@ -201,20 +202,22 @@ void repeating_tap_code(uint16_t keycode) {
     reset_data();
 }
 
-void repeating_tap_code_with_os_modifier(uint16_t keycode) {
-    register_code(get_os_key());
+void repeating_tap_code_with_os_modifier(uint16_t keycode, uint16_t mac_alternative) {
+    const uint16_t os_key = get_os_key(mac_alternative);
+    register_code(os_key);
     for (uint8_t i = 0; i < num_repeats; i++) {
         tap_code(keycode);
     }
-    unregister_code(get_os_key());
+    unregister_code(os_key);
 
     reset_data();
 }
 
-void tap_code_with_os_modifier(uint16_t keycode) {
-    register_code(get_os_key());
+void tap_code_with_os_modifier(uint16_t keycode, uint16_t mac_alternative) {
+    const uint16_t os_key = get_os_key(mac_alternative);
+    register_code(os_key);
     tap_code(keycode);
-    unregister_code(get_os_key());
+    unregister_code(os_key);
 
     reset_data();
 }

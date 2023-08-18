@@ -3,6 +3,7 @@
 #include "vim_core.h"
 #include "delete_mode.h"
 #include "yank_mode.h"
+#include "goto_vimlayer.h"
 
 #include "layers.h"
 #include "utils.h"
@@ -20,6 +21,16 @@ void command_undo(void);
 void command_redo(void);
 
 void command_mode_process_keycode(uint16_t keycode) {
+    if (goto_vimlayer_process_keycode(keycode)) {
+        if (wants_to_go_to_beginning_of_document()) {
+            command_go_to_beginning_of_document();
+        } else if (wants_to_go_to_end_of_document()) {
+            command_go_to_end_of_document();
+        }
+
+        return;
+    }
+
     switch (keycode) {
         case KC_4:
             command_go_to_end_of_line();
@@ -174,7 +185,7 @@ void command_enter_insert_mode_on_new_line(void) {
 
 void command_go_to_beginning_of_line(void) {
     if (is_mac_os()) {
-        tap_code_with_os_modifier(KC_LEFT);
+        tap_code_with_os_modifier(KC_LEFT, KC_LCMD);
     } else {
         tap_code(KC_HOME);
     }
@@ -182,7 +193,7 @@ void command_go_to_beginning_of_line(void) {
 
 void command_go_to_end_of_line(void) {
     if (is_mac_os()) {
-        tap_code_with_os_modifier(KC_RIGHT);
+        tap_code_with_os_modifier(KC_RIGHT, KC_LCMD);
     } else {
         tap_code(KC_END);
     }
@@ -197,22 +208,22 @@ void command_scroll_up(void) {
 }
 
 void command_undo(void) {
-    const uint16_t os_key = get_os_key();
+    const uint16_t os_key = get_os_key(KC_LCMD);
     register_code(os_key);
-    tap_code(KC_Z);
+    repeating_tap_code(KC_Z);
     unregister_code(os_key);
 }
 
 void command_redo(void) {
-    const uint16_t os_key = get_os_key();
+    const uint16_t os_key = get_os_key(KC_LCMD);
     register_code(os_key);
 
     if (is_mac_os()) {
         register_code(KC_LSFT);
-        tap_code(KC_Z);
+        repeating_tap_code(KC_Z);
         unregister_code(KC_LSFT);
     } else {
-        tap_code(KC_Y);
+        repeating_tap_code(KC_Y);
     }
 
     unregister_code(os_key);
@@ -244,9 +255,37 @@ void command_go_to_next_word(void) {
 }
 
 void command_go_to_beginning_of_word(void) {
-    repeating_tap_code_with_os_modifier(KC_LEFT);
+    repeating_tap_code_with_os_modifier(KC_LEFT, KC_LALT);
 }
 
 void command_go_to_end_of_word(void) {
-    repeating_tap_code_with_os_modifier(KC_RIGHT);
+    repeating_tap_code_with_os_modifier(KC_RIGHT, KC_LALT);
+}
+
+void command_go_to_beginning_of_document(void) {
+    const uint16_t os_key = get_os_key(KC_LCMD);
+    register_code(os_key);
+
+    if (is_mac_os()) {
+        tap_code(KC_UP);
+    } else {
+        tap_code(KC_HOME);
+    }
+
+    unregister_code(os_key);
+    goto_vimlayer_reset();
+}
+
+void command_go_to_end_of_document(void) {
+    const uint16_t os_key = get_os_key(KC_LCMD);
+    register_code(os_key);
+
+    if (is_mac_os()) {
+        tap_code(KC_DOWN);
+    } else {
+        tap_code(KC_END);
+    }
+
+    unregister_code(os_key);
+    goto_vimlayer_reset();
 }
