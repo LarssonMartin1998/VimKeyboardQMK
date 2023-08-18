@@ -173,11 +173,19 @@ void command_enter_insert_mode_on_new_line(void) {
 }
 
 void command_go_to_beginning_of_line(void) {
-    tap_code(KC_HOME);
+    if (is_mac_os()) {
+        tap_code_with_os_modifier(KC_LEFT);
+    } else {
+        tap_code(KC_HOME);
+    }
 }
 
 void command_go_to_end_of_line(void) {
-    tap_code(KC_END);
+    if (is_mac_os()) {
+        tap_code_with_os_modifier(KC_RIGHT);
+    } else {
+        tap_code(KC_END);
+    }
 }
 
 void command_scroll_down(void) {

@@ -210,3 +210,11 @@ void repeating_tap_code_with_os_modifier(uint16_t keycode) {
 
     reset_data();
 }
+
+void tap_code_with_os_modifier(uint16_t keycode) {
+    register_code(get_os_key());
+    tap_code(keycode);
+    unregister_code(get_os_key());
+
+    reset_data();
+}
