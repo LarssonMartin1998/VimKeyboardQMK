@@ -1,0 +1,8 @@
+//
+// Created by walnut on 2023-08-18.
+//
+
+#ifndef QMK_FIRMWARE_REPLACE_MODE_H
+#define QMK_FIRMWARE_REPLACE_MODE_H
+
+#endif // QMK_FIRMWARE_REPLACE_MODE_H
