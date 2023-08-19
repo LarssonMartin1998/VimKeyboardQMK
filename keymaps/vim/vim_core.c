@@ -4,7 +4,7 @@
  * P
  * entire Yank mode
  * B = b + left
- * J
+ * c -> c
  */
 #include "vim_core.h"
 
@@ -44,7 +44,6 @@ uint8_t modes_color_v[] = {
     205
 };
 
-bool should_cancel_insert = false;
 bool command_is_inside = false; // Difficult name, but if 'I' is pressed in delete/change/yank, delete IN word, yank IN word etc
 bool is_repeating = false;
 uint8_t num_repeats = 1;
@@ -66,6 +65,10 @@ void on_vim_layer_activated(void) {
 bool handle_vim_mode(uint16_t keycode, keyrecord_t* record) {
     if (!record->event.pressed) {
         return false;
+    }
+
+    if (keycode == KC_INSERT) {
+        return true;
     }
 
     if (keycode == KC_ESC) {
@@ -151,63 +154,14 @@ void update_hsv_from_mode(void) {
     rgblight_sethsv_noeeprom(modes_color_h[current_mode], modes_color_s[current_mode], modes_color_v[current_mode]);
 }
 
-bool vim_should_cancel_insert(void) {
-    return should_cancel_insert;
-}
-
-void vim_cancel_insert(void) {
-    const bool was_left_shift_held = is_left_shift_held();
-    const bool was_right_shift_held = is_right_shift_held();
-    if (was_left_shift_held) {
-        unregister_code(KC_LSFT);
-    }
-
-    if (was_right_shift_held) {
-        unregister_code(KC_RSFT);
-    }
-
-    tap_insert_and_update_active_state();
-    should_cancel_insert = false;
-
-    if (was_left_shift_held) {
-        register_code(KC_LSFT);
-    }
-
-    if (was_right_shift_held) {
-        register_code(KC_RSFT);
-    }
-}
-
 uint8_t get_current_mode(void) {
     return current_mode;
 }
 
 void set_current_mode(uint8_t new_mode) {
     clear_repeat();
-
-    uint8_t prev_mode = current_mode;
     current_mode = new_mode;
-    on_mode_changed(prev_mode, new_mode);
-
     update_hsv_from_mode();
-}
-
-void on_mode_changed(uint8_t prev, uint8_t new) {
-    switch (prev) {
-        case replace:
-            should_cancel_insert = true;
-            break;
-        default:
-            break;
-    }
-
-    switch (new) {
-        case replace:
-            tap_insert_and_update_active_state();
-            break;
-        default:
-            break;
-    }
 }
 
 bool is_command_inside(void) {
@@ -263,7 +217,7 @@ void repeating_tap_code(uint16_t keycode) {
         tap_code(keycode);
     }
 
-    reset_data();
+    clear_repeat();
 }
 
 void repeating_tap_code_with_os_modifier(uint16_t keycode, uint16_t mac_alternative) {
@@ -274,7 +228,7 @@ void repeating_tap_code_with_os_modifier(uint16_t keycode, uint16_t mac_alternat
     }
     unregister_code(os_key);
 
-    reset_data();
+    clear_repeat();
 }
 
 void tap_code_with_os_modifier(uint16_t keycode, uint16_t mac_alternative) {
@@ -282,6 +236,4 @@ void tap_code_with_os_modifier(uint16_t keycode, uint16_t mac_alternative) {
     register_code(os_key);
     tap_code(keycode);
     unregister_code(os_key);
-
-    reset_data();
 }

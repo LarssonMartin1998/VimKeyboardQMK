@@ -1,14 +1,13 @@
 #include "replace_mode.h"
 
 #include "vim_core.h"
+#include "delete_mode.h"
+
+#include "utils.h"
 
 bool exit_mode_after_once_char = false;
 
 void replace_mode_process_keycode(uint16_t keycode) {
-    if (!exit_mode_after_once_char || keycode == KC_INS) {
-        return;
-    }
-
     switch (keycode) {
         case KC_GRV:
         case KC_1:
@@ -83,9 +82,18 @@ void replace_mode_process_keycode(uint16_t keycode) {
         case KC_INT1:
         case KC_INT3:
         case KC_INT6:
-            // If we get to this point we haven't encountered any issues with the replace one char command.
-            // So just let it pass through normally and then reset.
-            reset_data();
+            if (is_ctrl_held() || is_alt_held()) {
+                break;
+            }
+
+            command_erase_right();
+
+            if (exit_mode_after_once_char) {
+                // If we get to this point we haven't encountered any issues with the replace one char command.
+                // So just let it pass through normally and then reset.
+                reset_data();
+            }
+
             break;
     }
 }

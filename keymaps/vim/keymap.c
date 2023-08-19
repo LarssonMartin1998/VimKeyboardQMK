@@ -184,12 +184,6 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     return update_backspace_delete(keycode);
 }
 
-void post_process_record_user(uint16_t keycode, keyrecord_t *record) {
-    if (vim_should_cancel_insert()) {
-        vim_cancel_insert();
-    }
-}
-
 void process_combo_event(uint16_t combo_index, bool pressed){
     switch (combo_index) {
         case CHANGE_TO_VIM_LAYER:

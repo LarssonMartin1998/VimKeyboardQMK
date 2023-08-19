@@ -133,8 +133,26 @@ bool is_backspace_held(void) {
 }
 
 void tap_insert_and_update_active_state() {
-    tap_code(KC_INS);
+    const bool was_left_shift_held = is_left_shift_held();
+    const bool was_right_shift_held = is_right_shift_held();
+    if (was_left_shift_held) {
+        unregister_code(KC_LSFT);
+    }
+
+    if (was_right_shift_held) {
+        unregister_code(KC_RSFT);
+    }
+
+    tap_insert_and_update_active_state();
     toggle_insert_active_state();
+
+    if (was_left_shift_held) {
+        register_code(KC_LSFT);
+    }
+
+    if (was_right_shift_held) {
+        register_code(KC_RSFT);
+    }
 }
 
 void toggle_insert_active_state(void) {

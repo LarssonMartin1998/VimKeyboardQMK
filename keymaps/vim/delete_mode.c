@@ -13,7 +13,6 @@ void command_erase_upwards(void);
 void command_erase_downwards(void);
 void command_erase_current_line(void);
 void command_erase_left(void);
-void command_erase_right(void);
 void command_erase_to_next_word(void);
 void command_erase_to_beginning_of_word(void);
 void command_erase_to_end_of_word(void);
@@ -132,8 +131,14 @@ void delete_mode_process_keycode(uint16_t keycode) {
     }
 
 skip_switchcase:
-    if (performed_command && is_change_mode) {
+    if (!performed_command) {
+        return;
+    }
+
+    if (is_change_mode) {
         command_enter_insert_mode();
+    } else {
+        reset_data();
     }
 }
 
@@ -187,7 +192,25 @@ void command_erase_left(void) {
 }
 
 void command_erase_right(void) {
+    const bool was_left_shift_held = is_left_shift_held();
+    const bool was_right_shift_held = is_right_shift_held();
+    if (was_left_shift_held) {
+        unregister_code(KC_LSFT);
+    }
+
+    if (was_right_shift_held) {
+        unregister_code(KC_RSFT);
+    }
+
     repeating_tap_code(KC_DEL);
+
+    if (was_left_shift_held) {
+        register_code(KC_LSFT);
+    }
+
+    if (was_right_shift_held) {
+        register_code(KC_RSFT);
+    }
 }
 
 void command_erase_to_next_word(void) {
