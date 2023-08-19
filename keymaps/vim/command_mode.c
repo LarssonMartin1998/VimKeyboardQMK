@@ -16,8 +16,10 @@ void command_enter_insert_mode_at_beginning_of_line(void);
 void command_enter_insert_mode_at_end_of_line(void);
 void command_enter_insert_mode_after(void);
 void command_enter_insert_mode_on_new_line(void);
-void command_scroll_up(void);
+void command_paste_above(void);
+void command_paste(void);
 void command_scroll_down(void);
+void command_scroll_up(void);
 void command_undo(void);
 void command_redo(void);
 void command_search(void);
@@ -108,6 +110,14 @@ void command_mode_process_keycode(uint16_t keycode) {
             break;
         case KC_B:
             command_go_to_beginning_of_word();
+            break;
+        case KC_P:
+            if (is_shift_held()) {
+                command_paste_above();
+            } else {
+                command_paste();
+            }
+
             break;
         case KC_E:
             if (is_ctrl_held()) {
@@ -207,6 +217,19 @@ void command_go_to_end_of_line(void) {
     } else {
         tap_code(KC_END);
     }
+}
+
+void command_paste_above(void) {
+    command_go_to_beginning_of_line();
+    tap_code(KC_ENT);
+    command_up();
+    command_paste();
+}
+
+void command_paste(void) {
+    register_code(KC_LSFT);
+    tap_code(KC_INS);
+    unregister_code(KC_LSFT);
 }
 
 void command_scroll_down(void) {

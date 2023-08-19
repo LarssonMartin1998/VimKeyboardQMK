@@ -1,11 +1,3 @@
-//https://blog.codepen.io/2014/02/21/vim-key-bindings/
-/*
- * p
- * P
- * entire Yank mode
- * B = b + left
- * c -> c
- */
 #include "vim_core.h"
 
 #include "command_mode.h"
