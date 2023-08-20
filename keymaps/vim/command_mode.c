@@ -288,11 +288,11 @@ void command_go_to_next_word(void) {
 }
 
 void command_go_to_beginning_of_word(void) {
-    repeating_tap_code_with_os_modifier(KC_LEFT, KC_LALT);
+    repeating_tap_code_with_os_modifier(KC_LEFT, KC_LOPT);
 }
 
 void command_go_to_end_of_word(void) {
-    repeating_tap_code_with_os_modifier(KC_RIGHT, KC_LALT);
+    repeating_tap_code_with_os_modifier(KC_RIGHT, KC_LOPT);
 }
 
 void command_go_to_beginning_of_document(void) {
