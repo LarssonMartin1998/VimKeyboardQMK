@@ -227,9 +227,15 @@ void command_paste_above(void) {
 }
 
 void command_paste(void) {
-    register_code(KC_LSFT);
-    tap_code(KC_INS);
-    unregister_code(KC_LSFT);
+    if (is_mac_os()) {
+        register_code(KC_LCMD);
+        tap_code(KC_V);
+        unregister_code(KC_LCMD);
+    } else {
+        register_code(KC_LSFT);
+        tap_code(KC_INS);
+        unregister_code(KC_LSFT);
+    }
 }
 
 void command_scroll_down(void) {
