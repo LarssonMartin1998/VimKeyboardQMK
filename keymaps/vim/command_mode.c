@@ -129,6 +129,8 @@ void command_mode_process_keycode(uint16_t keycode) {
         case KC_Y:
             if (is_ctrl_held()) {
                 command_scroll_up();
+            } else if (is_shift_held()){
+                yank_mode_process_keycode(keycode);
             } else {
                 command_enter_yank_mode();
             }
