@@ -20,6 +20,7 @@ bool vim_should_cancel_insert(void);
 void vim_cancel_insert(void);
 uint8_t get_current_mode(void);
 void set_current_mode(uint8_t new_mode);
+void set_current_mode_without_hsv(uint8_t new_mode);
 
 bool is_command_inside(void);
 void activate_inside_mode_for_next_command(void);

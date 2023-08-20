@@ -37,6 +37,8 @@ combo_t key_combos[] = {
     [CHANGE_TO_VIM_LAYER] = COMBO_ACTION(change_to_vim_layer)
 };
 
+uint16_t prev_layer = MAC;
+
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 [MAC] = LAYOUT_iso_83(
     KC_PSCR,            KC_F1,    KC_F2,    KC_F3,    KC_F4,    KC_F5,    KC_F6,    KC_F7,    KC_F8,    KC_F9,    KC_F10,   KC_F11,   KC_F12,   KC_DEL,   KC_PGUP,
@@ -170,9 +172,13 @@ bool update_backspace_delete(uint16_t keycode) {
 }
 
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
+    if (keycode == TG(FN) || keycode == TG(GAME)) {
+        return true;
+    }
+
     update_tracked_keys(keycode, record);
 
-    if (layer_state_is(VIM)) {
+    if (layer_state_is(VIM) && !layer_state_is(FN)) {
         if (handle_vim_mode(keycode, record)) {
             return false;
         }
@@ -198,33 +204,47 @@ void process_combo_event(uint16_t combo_index, bool pressed){
                 layer_off(FN);
             }
 
-            layer_on(VIM);
-
+            if (!layer_state_is(VIM)) {
+                layer_on(VIM);
+            }
             break;
     }
 }
 
 layer_state_t layer_state_set_user(layer_state_t state) {
-    switch (get_highest_layer(state)) {
+    uint16_t curr_layer = get_highest_layer(state);
+    switch (curr_layer) {
         case MAC:
         case WIN:
             update_hsv_from_mode();
             combo_enable();
+            break;
+        case VIM:
+            // Don't reinit VIM when coming from FN layer as we want to be able to switch between VIM & FN seamlessly.
+            if (prev_layer != FN) {
+                on_vim_layer_activated();
+            } else {
+                update_hsv_from_mode();
+            }
+
+            if (is_insert_active()) {
+                tap_insert_and_update_active_state();
+            }
+
+            combo_disable();
             break;
         case FN:
             rgblight_sethsv_noeeprom(HSV_FN);
             combo_enable();
             break;
         case GAME:
+            set_current_mode_without_hsv(insert);
             rgblight_sethsv_noeeprom(HSV_GAME);
-            combo_disable();
-            break;
-        case VIM:
-            on_vim_layer_activated();
             combo_disable();
             break;
     }
 
+    prev_layer = curr_layer;
     return state;
 }
 

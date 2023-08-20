@@ -48,10 +48,6 @@ void on_mode_changed(uint8_t prev, uint8_t new);
 void on_vim_layer_activated(void) {
     num_repeats = 1;
     set_current_mode(command);
-
-    if (is_insert_active()) {
-        tap_insert_and_update_active_state();
-    }
 }
 
 bool handle_vim_mode(uint16_t keycode, keyrecord_t* record) {
@@ -64,8 +60,13 @@ bool handle_vim_mode(uint16_t keycode, keyrecord_t* record) {
     }
 
     if (keycode == KC_ESC) {
-        reset_data();
-        return true;
+        if (current_mode == command) {
+            command_enter_insert_mode();
+            return false;
+        } else {
+            reset_data();
+            return true;
+        }
     }
 
     if (current_mode != replace && !try_append_repeat(keycode)) {
@@ -151,9 +152,13 @@ uint8_t get_current_mode(void) {
 }
 
 void set_current_mode(uint8_t new_mode) {
+    set_current_mode_without_hsv(new_mode);
+    update_hsv_from_mode();
+}
+
+void set_current_mode_without_hsv(uint8_t new_mode) {
     clear_repeat();
     current_mode = new_mode;
-    update_hsv_from_mode();
 }
 
 bool is_command_inside(void) {
