@@ -5,7 +5,7 @@
 #include "layers.h"
 
 #define SUPPORTS_MAC
-#define SUPPORTS_WIN // Same as Linux
+#define SUPPORTS_WINLIN
 
 #define LSFT_BIT (1 << 0)
 #define RSFT_BIT (1 << 1)
@@ -17,13 +17,18 @@
 #define INSERT_BIT (1 << 7)
 
 unsigned char modifiers_state_mask = 0x00;
+uint16_t default_layer = MAC;
+
+void utils_set_default_layer(uint16_t new_default_layer) {
+    default_layer = new_default_layer;
+}
 
 bool is_mac_os(void) {
-#if defined(SUPPORTS_MAC) && defined(SUPPORTS_WIN)
-    return layer_state_is(MAC);
+#if defined(SUPPORTS_MAC) && defined(SUPPORTS_WINLIN)
+    return default_layer == MAC;
 #elif defined(SUPPORTS_MAC)
     return true;
-#elif defined(SUPPORTS_WIN)
+#elif defined(SUPPORTS_WINLIN)
     return false;
 #endif
 }

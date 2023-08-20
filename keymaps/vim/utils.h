@@ -2,6 +2,8 @@
 
 #include QMK_KEYBOARD_H
 
+void utils_set_default_layer(uint16_t new_default_layer);
+
 bool is_mac_os(void);
 uint16_t get_os_key(uint16_t mac_alternative);
 
