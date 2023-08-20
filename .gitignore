@@ -1,2 +1,4 @@
 keymaps/*
 !keymaps/vim/
+
+.DS_Store
