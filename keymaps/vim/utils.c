@@ -86,7 +86,7 @@ void set_right_ctrl_held(void) {
 }
 
 void set_right_ctrl_released(void) {
-    modifiers_state_mask &= ~LALT_BIT;
+    modifiers_state_mask &= ~RCTL_BIT;
 }
 
 bool is_right_ctrl_held(void) {

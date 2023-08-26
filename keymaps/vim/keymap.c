@@ -172,11 +172,11 @@ bool update_backspace_delete(uint16_t keycode) {
 }
 
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
+    update_tracked_keys(keycode, record);
+
     if (keycode == TG(FN) || keycode == TG(GAME)) {
         return true;
     }
-
-    update_tracked_keys(keycode, record);
 
     if (layer_state_is(VIM) && !layer_state_is(FN)) {
         if (handle_vim_mode(keycode, record)) {
