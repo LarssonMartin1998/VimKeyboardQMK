@@ -51,6 +51,11 @@ void on_vim_layer_activated(void) {
 }
 
 bool handle_vim_mode(uint16_t keycode, keyrecord_t* record) {
+    const bool is_keycode_win = keycode == KC_LWIN || keycode == KC_RWIN;
+    if (!is_mac_os() && is_keycode_win) {
+        return false;
+    }
+
     if (!record->event.pressed) {
         return false;
     }

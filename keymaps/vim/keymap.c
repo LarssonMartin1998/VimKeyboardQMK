@@ -38,7 +38,6 @@ combo_t key_combos[] = {
 };
 
 uint16_t prev_layer = MAC;
-
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 [MAC] = LAYOUT_iso_83(
     KC_PSCR,            KC_F1,    KC_F2,    KC_F3,    KC_F4,    KC_F5,    KC_F6,    KC_F7,    KC_F8,    KC_F9,    KC_F10,   KC_F11,   KC_F12,   KC_DEL,   KC_PGUP,
@@ -87,6 +86,81 @@ void keyboard_post_init_user(void) {
     rgblight_enable_noeeprom();
     update_hsv_from_mode();
     rgblight_mode_noeeprom(1);
+}
+
+bool try_register_function_key(uint16_t keycode, keyrecord_t *record) {
+    if (!is_ctrl_held()) {
+        return false;
+    }
+
+    uint16_t code_to_tap = 0;
+    switch (keycode) {
+        case KC_1:
+            code_to_tap = KC_F1;
+            break;
+        case KC_2:
+            code_to_tap = KC_F2;
+            break;
+        case KC_3:
+            code_to_tap = KC_F3;
+            break;
+        case KC_4:
+            code_to_tap = KC_F4;
+            break;
+        case KC_5:
+            code_to_tap = KC_F5;
+            break;
+        case KC_6:
+            code_to_tap = KC_F6;
+            break;
+        case KC_7:
+            code_to_tap = KC_F7;
+            break;
+        case KC_8:
+            code_to_tap = KC_F8;
+            break;
+        case KC_9:
+            code_to_tap = KC_F9;
+            break;
+        case KC_0:
+            code_to_tap = KC_F10;
+            break;
+        case KC_MINS:
+            code_to_tap = KC_F11;
+            break;
+        case KC_EQL:
+            code_to_tap = KC_F12;
+            break;
+        default:
+            return false;
+    }
+
+    bool was_left_ctrl_held = is_left_ctrl_held();
+    bool was_right_ctrl_held = is_right_ctrl_held();
+
+    if (was_left_ctrl_held) {
+        unregister_code(KC_LCTL);
+    }
+
+    if (was_right_ctrl_held) {
+        unregister_code(KC_RCTL);
+    }
+
+    if (record->event.pressed) {
+        register_code(code_to_tap);
+    } else {
+        unregister_code(code_to_tap);
+    }
+
+    if (was_left_ctrl_held) {
+        register_code(KC_LCTL);
+    }
+
+    if (was_right_ctrl_held) {
+        register_code(KC_RCTL);
+    }
+
+    return true;
 }
 
 void update_tracked_keys(uint16_t keycode, keyrecord_t *record) {
@@ -172,6 +246,10 @@ bool update_backspace_delete(uint16_t keycode) {
 }
 
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
+    if (!layer_state_is(GAME) && try_register_function_key(keycode, record)) {
+        return false;
+    }
+
     update_tracked_keys(keycode, record);
 
     if (keycode == TG(FN) || keycode == TG(GAME)) {
@@ -209,6 +287,10 @@ void process_combo_event(uint16_t combo_index, bool pressed){
             }
             break;
     }
+}
+
+uint16_t get_combo_term(uint16_t index, combo_t *combo) {
+    return 200;
 }
 
 layer_state_t layer_state_set_user(layer_state_t state) {
