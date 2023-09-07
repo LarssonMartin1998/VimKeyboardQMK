@@ -141,7 +141,7 @@ void command_mode_process_keycode(uint16_t keycode) {
         case KC_SLSH:
             command_search();
             break;
-        case KC_TAB: // These three commands deviate from Vim, however, it makes the Vim Layer more useful when navigating things outside coding like forms.
+        case KC_TAB: // These four commands deviate from Vim, however, it makes the Vim Layer more useful when navigating things outside coding like forms.
             command_enter_insert_mode();
             tap_code(KC_TAB);
             break;
@@ -152,6 +152,10 @@ void command_mode_process_keycode(uint16_t keycode) {
         case KC_ENT: //
             command_enter_insert_mode();
             tap_code(KC_ENT);
+            break;
+        case KC_BSPC: //
+            command_enter_insert_mode();
+            tap_code(KC_BSPC);
             break;
     }
 }
@@ -196,7 +200,9 @@ void command_enter_insert_mode_on_new_line(void) {
         command_go_to_end_of_line();
     }
 
+    register_code(KC_LSFT);
     tap_code(KC_ENT);
+    unregister_code(KC_LSFT);
 
     if (make_new_line_above) {
         command_up();
@@ -223,7 +229,11 @@ void command_go_to_end_of_line(void) {
 
 void command_paste_above(void) {
     command_go_to_beginning_of_line();
+
+    register_code(KC_LSFT);
     tap_code(KC_ENT);
+    unregister_code(KC_LSFT);
+
     command_up();
     command_paste();
 }

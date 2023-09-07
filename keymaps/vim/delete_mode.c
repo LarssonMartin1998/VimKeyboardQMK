@@ -8,7 +8,6 @@
 
 void command_erase_line_forwards(void);
 void command_erase_line_backwards(void);
-void command_erase_all_on_current_line(void);
 void command_erase_upwards(void);
 void command_erase_downwards(void);
 void command_erase_current_line(void);
@@ -56,7 +55,7 @@ void delete_mode_process_keycode(uint16_t keycode) {
                 command_erase_line_forwards();
                 is_change_mode = true;
             } else {
-                command_erase_all_on_current_line();
+                command_erase_current_line();
             }
 
             performed_command = true;
@@ -81,7 +80,7 @@ void delete_mode_process_keycode(uint16_t keycode) {
         case KC_S:
             is_change_mode = true;
             if (is_shift_held()) {
-                command_erase_all_on_current_line();
+                command_erase_current_line();
             } else {
                 command_erase_right();
             }
@@ -154,12 +153,6 @@ void command_erase_line_backwards(void) {
     command_go_to_beginning_of_line();
     command_erase_right();
     unregister_code(KC_LSFT);
-}
-
-void command_erase_all_on_current_line(void) {
-    command_erase_current_line();
-    tap_code(KC_ENT);
-    command_up();
 }
 
 void command_erase_upwards(void) {
