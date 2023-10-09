@@ -1,4 +1,6 @@
 #include "utils.h"
+#include <stdint.h>
+#include "keycodes.h"
 
 #include QMK_KEYBOARD_H
 
@@ -16,8 +18,30 @@
 #define BACKSPACE_BIT (1 << 6)
 #define INSERT_BIT (1 << 7)
 
+// clang-format off
+bool (*keycode_to_func[])(void) = {
+    is_left_shift_held,
+    is_right_shift_held,
+    is_left_ctrl_held,
+    is_right_ctrl_held,
+    is_left_alt_held,
+    is_right_alt_held,
+    is_backspace_held
+};
+
+uint16_t keycode_mappings[] = {
+    KC_LSFT,
+    KC_RSFT,
+    KC_LCTL,
+    KC_RCTL,
+    KC_LALT,
+    KC_RALT,
+    KC_BSPC
+};
+// clang-format on
+
 unsigned char modifiers_state_mask = 0x00;
-uint16_t default_layer = MAC;
+uint16_t      default_layer        = MAC;
 
 void utils_set_default_layer(uint16_t new_default_layer) {
     default_layer = new_default_layer;
@@ -138,7 +162,7 @@ bool is_backspace_held(void) {
 }
 
 void tap_insert_and_update_active_state() {
-    const bool was_left_shift_held = is_left_shift_held();
+    const bool was_left_shift_held  = is_left_shift_held();
     const bool was_right_shift_held = is_right_shift_held();
     if (was_left_shift_held) {
         unregister_code(KC_LSFT);
@@ -166,4 +190,15 @@ void toggle_insert_active_state(void) {
 
 bool is_insert_active(void) {
     return modifiers_state_mask & INSERT_BIT;
+}
+
+bool is_mod_held(uint16_t keycode) {
+    const uint8_t num = sizeof(keycode_mappings) / sizeof(uint16_t);
+    for (uint8_t i = 0; i < num; i++) {
+        if (keycode_mappings[i] == keycode) {
+            return keycode_to_func[i]();
+        }
+    }
+
+    return false;
 }

@@ -14,6 +14,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <stdint.h>
+#include "action.h"
+#include "action_layer.h"
+#include "action_util.h"
+#include "keycodes.h"
+#include "modifiers.h"
 #include QMK_KEYBOARD_H
 
 #include <process_combo.h>
@@ -24,20 +30,18 @@
 
 #define COMBO_STRICT_TIMER
 
-#define HSV_FN            87, 205, 110 // green
-#define HSV_GAME          197, 205, 110 // purple
+#define HSV_FN 87, 205, 110    // green
+#define HSV_GAME 197, 205, 110 // purple
 
-enum combo_events {
-    CHANGE_TO_VIM_LAYER
-};
+enum combo_events { CHANGE_TO_VIM_LAYER };
 
-const uint16_t PROGMEM change_to_vim_layer[] = { KC_LCTL, KC_ESC, COMBO_END };
+const uint16_t PROGMEM change_to_vim_layer[] = {KC_LCTL, KC_ESC, COMBO_END};
 
-combo_t key_combos[] = {
-    [CHANGE_TO_VIM_LAYER] = COMBO_ACTION(change_to_vim_layer)
-};
+combo_t key_combos[] = {[CHANGE_TO_VIM_LAYER] = COMBO_ACTION(change_to_vim_layer)};
 
 uint16_t prev_layer = MAC;
+
+// clang-format off
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 [MAC] = LAYOUT_iso_83(
     KC_PSCR,            KC_F1,    KC_F2,    KC_F3,    KC_F4,    KC_F5,    KC_F6,    KC_F7,    KC_F8,    KC_F9,    KC_F10,   KC_F11,   KC_F12,   KC_DEL,   KC_PGUP,
@@ -80,6 +84,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     _______,  KC_NO,    _______,                                _______,                                _______,  TG(GAME), _______,  _______,  _______,  _______)
 
 };
+// clang-format on
 
 void keyboard_post_init_user(void) {
     layer_state_is(MAC);
@@ -89,6 +94,7 @@ void keyboard_post_init_user(void) {
 }
 
 bool try_register_function_key(uint16_t keycode, keyrecord_t *record) {
+    return false;
     if (!is_ctrl_held()) {
         return false;
     }
@@ -135,7 +141,7 @@ bool try_register_function_key(uint16_t keycode, keyrecord_t *record) {
             return false;
     }
 
-    bool was_left_ctrl_held = is_left_ctrl_held();
+    bool was_left_ctrl_held  = is_left_ctrl_held();
     bool was_right_ctrl_held = is_right_ctrl_held();
 
     if (was_left_ctrl_held) {
@@ -217,40 +223,146 @@ void update_tracked_keys(uint16_t keycode, keyrecord_t *record) {
     }
 }
 
-bool update_backspace_delete(uint16_t keycode) {
-    switch (keycode) {
-        case KC_BSPC:
-        case KC_LCTL:
-            if (is_left_ctrl_held() && is_backspace_held()) {
-                unregister_code(KC_BSPC);
-                unregister_code(KC_LCTL);
-                register_code(KC_DEL);
-            } else if (is_backspace_held()) {
-                unregister_code(KC_DEL);
-                unregister_code(KC_LCTL);
-                register_code(KC_BSPC);
-            } else if (is_left_ctrl_held()) {
-                unregister_code(KC_DEL);
-                unregister_code(KC_BSPC);
-                register_code(KC_LCTL);
-            } else {
-                unregister_code(KC_BSPC);
-                unregister_code(KC_DEL);
-                unregister_code(KC_LCTL);
-            }
+bool update_mod_convert(uint16_t keycode, uint16_t source, uint16_t other, uint16_t lmod, uint16_t rmod) {
+    uint16_t valid   = source;
+    uint16_t invalid = other;
 
-            return false;
+    const bool is_source_held = is_mod_held(source);
+    const bool is_lmod_held   = is_mod_held(lmod);
+    const bool is_rmod_held   = is_mod_held(rmod);
+    if (!is_source_held) {
+        unregister_code(source);
+        unregister_code(other);
+
+        if (is_lmod_held) {
+            register_code(lmod);
+        }
+
+        if (is_rmod_held) {
+            register_code(rmod);
+        }
+
+        return false;
+    }
+
+    const bool should_update = keycode == source || keycode == lmod || keycode == rmod;
+    if (should_update) {
+        if (is_lmod_held || is_rmod_held) {
+            invalid = valid;
+            valid   = other;
+        }
+
+        unregister_code(lmod);
+        unregister_code(rmod);
+
+        register_code(valid);
+        unregister_code(invalid);
+
+        return true;
+    }
+
+    return false;
+}
+
+bool process_mod_conversion(uint16_t source_key, uint16_t target_key, uint16_t left_mod, uint16_t right_mod, keyrecord_t *record) {
+    if (record->event.pressed) {
+        // Check if either left or right modifier key is held
+        if (keyboard_report->mods & (MOD_BIT(left_mod) | MOD_BIT(right_mod))) {
+            // Convert source_key to target_key
+            register_code(target_key);
+            unregister_code(source_key);
+        }
+    } else { // Key release event
+        // Check if either left or right modifier key is released
+        if (!(keyboard_report->mods & (MOD_BIT(left_mod) | MOD_BIT(right_mod)))) {
+            // Revert target_key to source_key
+            register_code(source_key);
+            unregister_code(target_key);
+        }
+    }
+    return true;
+}
+
+bool update_ctrl_shortcuts(uint16_t keycode) {
+    // const bool was_left_ctrl_held  = is_left_ctrl_held();
+    // const bool was_right_ctrl_held = is_right_ctrl_held();
+    // if (was_left_ctrl_held) {
+    //     unregister_code(KC_LCTL);
+    // }
+    //
+    // if (was_right_ctrl_held) {
+    //     unregister_code(KC_RCTL);
+    // }
+    //
+    // bool       result          = false;
+    // const bool allow_shortcuts = !is_shift_held() && !is_alt_held();
+    // if (allow_shortcuts) {
+    //     if (update_backspace_delete(keycode)) {
+    //         result = true;
+    //     }
+    // }
+    //
+    // if (result) {
+    //     if (was_left_ctrl_held) {
+    //         register_code(KC_LCTL);
+    //     }
+    //     if (was_right_ctrl_held) {
+    //         register_code(KC_RCTL);
+    //     }
+    // }
+    //
+    // return result;
+    return true;
+}
+
+bool state_base(uint16_t keycode, keyrecord_t *record) {
+    // if (try_register_function_key(keycode, record)) {
+    //     return false;
+    // }
+
+    // if (update_ctrl_shortcuts(keycode)) {
+    //     return false;
+    // }
+
+    if (update_mod_convert(keycode, KC_BSPC, KC_DEL, KC_LCTL, KC_RCTL)) {
+        return false;
+    }
+
+    if (keycode == KC_INS) {
+        toggle_insert_active_state();
     }
 
     return true;
 }
 
+bool state_vim(uint16_t keycode, keyrecord_t *record) {
+    return true;
+}
+
+bool state_fn(uint16_t keycode, keyrecord_t *record) {
+    return true;
+}
+
+bool state_game(uint16_t keycode, keyrecord_t *record) {
+    return true;
+}
+
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
+    update_tracked_keys(keycode, record);
+
+    if (layer_state_is(GAME)) {
+        return state_game(keycode, record);
+    } else if (layer_state_is(FN)) {
+        return state_fn(keycode, record);
+    } else if (layer_state_is(VIM)) {
+        return state_vim(keycode, record);
+    } else {
+        return state_base(keycode, record);
+    }
+
     if (!layer_state_is(GAME) && try_register_function_key(keycode, record)) {
         return false;
     }
-
-    update_tracked_keys(keycode, record);
 
     if (keycode == TG(FN) || keycode == TG(GAME)) {
         return true;
@@ -267,10 +379,11 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
         }
     }
 
-    return update_backspace_delete(keycode);
+    // return update_backspace_delete(keycode);
+    return true;
 }
 
-void process_combo_event(uint16_t combo_index, bool pressed){
+void process_combo_event(uint16_t combo_index, bool pressed) {
     switch (combo_index) {
         case CHANGE_TO_VIM_LAYER:
             // Shouldn't need to check if vim layer is active since combos are turned off for that layer.
