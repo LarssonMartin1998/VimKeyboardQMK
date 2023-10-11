@@ -40,4 +40,6 @@ void tap_insert_and_update_active_state(void);
 void toggle_insert_active_state(void);
 bool is_insert_active(void);
 
-bool is_mod_held(uint16_t keycode);
+void initialize_keys_state(const uint16_t keymaps[][MATRIX_ROWS][MATRIX_COLS]);
+bool is_keycode_pressed(uint8_t keycode);
+void update_keycode(uint16_t keycode, keyrecord_t *record);

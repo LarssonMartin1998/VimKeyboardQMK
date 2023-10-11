@@ -1,47 +1,20 @@
 #include "utils.h"
-#include <stdint.h>
-#include "keycodes.h"
-
-#include QMK_KEYBOARD_H
+#include "keycode_map.h" // Include the keycode map
 
 #include "layers.h"
+#include "action.h"
+#include "keycodes.h"
+#include "keycode_map.h"
+
+#include QMK_KEYBOARD_H
+#include <stdint.h>
 
 #define SUPPORTS_MAC
 #define SUPPORTS_WINLIN
+#define NUM_KEYS 83
 
-#define LSFT_BIT (1 << 0)
-#define RSFT_BIT (1 << 1)
-#define LCTL_BIT (1 << 2)
-#define RCTL_BIT (1 << 3)
-#define LALT_BIT (1 << 4)
-#define RALT_BIT (1 << 5)
-#define BACKSPACE_BIT (1 << 6)
-#define INSERT_BIT (1 << 7)
-
-// clang-format off
-bool (*keycode_to_func[])(void) = {
-    is_left_shift_held,
-    is_right_shift_held,
-    is_left_ctrl_held,
-    is_right_ctrl_held,
-    is_left_alt_held,
-    is_right_alt_held,
-    is_backspace_held
-};
-
-uint16_t keycode_mappings[] = {
-    KC_LSFT,
-    KC_RSFT,
-    KC_LCTL,
-    KC_RCTL,
-    KC_LALT,
-    KC_RALT,
-    KC_BSPC
-};
-// clang-format on
-
-unsigned char modifiers_state_mask = 0x00;
-uint16_t      default_layer        = MAC;
+static uint16_t default_layer = MAC;
+static bool     insert_active = false;
 
 void utils_set_default_layer(uint16_t new_default_layer) {
     default_layer = new_default_layer;
@@ -65,103 +38,43 @@ uint16_t get_os_key(uint16_t mac_alternative) {
     }
 }
 
-void set_left_shift_held(void) {
-    modifiers_state_mask |= LSFT_BIT;
-}
-
-void set_left_shift_released(void) {
-    modifiers_state_mask &= ~LSFT_BIT;
-}
-
 bool is_left_shift_held(void) {
-    return modifiers_state_mask & LSFT_BIT;
-}
-
-void set_right_shift_held(void) {
-    modifiers_state_mask |= RSFT_BIT;
-}
-
-void set_right_shift_released(void) {
-    modifiers_state_mask &= ~RSFT_BIT;
+    return keycode_map_lookup(KC_LSFT); // Use the keycode_map for lookup
 }
 
 bool is_right_shift_held(void) {
-    return modifiers_state_mask & RSFT_BIT;
+    return keycode_map_lookup(KC_RSFT); // Use the keycode_map for lookup
 }
 
 bool is_shift_held(void) {
     return is_left_shift_held() || is_right_shift_held();
 }
 
-void set_left_ctrl_held(void) {
-    modifiers_state_mask |= LCTL_BIT;
-}
-
-void set_left_ctrl_released(void) {
-    modifiers_state_mask &= ~LCTL_BIT;
-}
-
 bool is_left_ctrl_held(void) {
-    return modifiers_state_mask & LCTL_BIT;
-}
-
-void set_right_ctrl_held(void) {
-    modifiers_state_mask |= RCTL_BIT;
-}
-
-void set_right_ctrl_released(void) {
-    modifiers_state_mask &= ~RCTL_BIT;
+    return keycode_map_lookup(KC_LCTL); // Use the keycode_map for lookup
 }
 
 bool is_right_ctrl_held(void) {
-    return modifiers_state_mask & RCTL_BIT;
+    return keycode_map_lookup(KC_RCTL); // Use the keycode_map for lookup
 }
 
 bool is_ctrl_held(void) {
     return is_left_ctrl_held() || is_right_ctrl_held();
 }
 
-void set_left_alt_held(void) {
-    modifiers_state_mask |= LALT_BIT;
-}
-
-void set_left_alt_released(void) {
-    modifiers_state_mask &= ~LALT_BIT;
-}
-
 bool is_left_alt_held(void) {
-    return modifiers_state_mask & LALT_BIT;
-}
-
-void set_right_alt_held(void) {
-    modifiers_state_mask |= RALT_BIT;
-}
-
-void set_right_alt_released(void) {
-    modifiers_state_mask &= ~RALT_BIT;
+    return keycode_map_lookup(KC_LALT); // Use the keycode_map for lookup
 }
 
 bool is_right_alt_held(void) {
-    return modifiers_state_mask & RALT_BIT;
+    return keycode_map_lookup(KC_RALT); // Use the keycode_map for lookup
 }
 
 bool is_alt_held(void) {
     return is_left_alt_held() || is_right_alt_held();
 }
 
-void set_backspace_held(void) {
-    modifiers_state_mask |= BACKSPACE_BIT;
-}
-
-void set_backspace_released(void) {
-    modifiers_state_mask &= ~BACKSPACE_BIT;
-}
-
-bool is_backspace_held(void) {
-    return modifiers_state_mask & BACKSPACE_BIT;
-}
-
-void tap_insert_and_update_active_state() {
+void tap_insert_and_update_active_state(void) {
     const bool was_left_shift_held  = is_left_shift_held();
     const bool was_right_shift_held = is_right_shift_held();
     if (was_left_shift_held) {
@@ -172,7 +85,6 @@ void tap_insert_and_update_active_state() {
         unregister_code(KC_RSFT);
     }
 
-    tap_insert_and_update_active_state();
     toggle_insert_active_state();
 
     if (was_left_shift_held) {
@@ -185,20 +97,25 @@ void tap_insert_and_update_active_state() {
 }
 
 void toggle_insert_active_state(void) {
-    modifiers_state_mask ^= INSERT_BIT;
+    insert_active = !insert_active;
 }
 
 bool is_insert_active(void) {
-    return modifiers_state_mask & INSERT_BIT;
+    return insert_active;
 }
 
-bool is_mod_held(uint16_t keycode) {
-    const uint8_t num = sizeof(keycode_mappings) / sizeof(uint16_t);
-    for (uint8_t i = 0; i < num; i++) {
-        if (keycode_mappings[i] == keycode) {
-            return keycode_to_func[i]();
-        }
-    }
+void initialize_keys_state(const uint16_t keymaps[][MATRIX_ROWS][MATRIX_COLS]) {
+    keycode_map_init(); // Initialize the keycode_map
+}
 
-    return false;
+bool is_keycode_pressed(uint8_t keycode) {
+    return keycode_map_lookup(keycode); // Use the keycode_map for lookup
+}
+
+void update_keycode(uint16_t keycode, keyrecord_t *record) {
+    if (record->event.pressed) {
+        keycode_map_insert(keycode, true); // Use the keycode_map for insertion
+    } else {
+        keycode_map_insert(keycode, false); // Use the keycode_map for insertion
+    }
 }

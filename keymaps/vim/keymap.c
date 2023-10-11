@@ -15,10 +15,14 @@
  */
 
 #include <stdint.h>
+#include <stdio.h>
 #include "action.h"
 #include "action_layer.h"
 #include "action_util.h"
+#include "debug.h"
 #include "keycodes.h"
+#include "keymap_us.h"
+#include "matrix.h"
 #include "modifiers.h"
 #include QMK_KEYBOARD_H
 
@@ -93,167 +97,24 @@ void keyboard_post_init_user(void) {
     rgblight_mode_noeeprom(1);
 }
 
-bool try_register_function_key(uint16_t keycode, keyrecord_t *record) {
-    return false;
-    if (!is_ctrl_held()) {
-        return false;
-    }
-
-    uint16_t code_to_tap = 0;
-    switch (keycode) {
-        case KC_1:
-            code_to_tap = KC_F1;
-            break;
-        case KC_2:
-            code_to_tap = KC_F2;
-            break;
-        case KC_3:
-            code_to_tap = KC_F3;
-            break;
-        case KC_4:
-            code_to_tap = KC_F4;
-            break;
-        case KC_5:
-            code_to_tap = KC_F5;
-            break;
-        case KC_6:
-            code_to_tap = KC_F6;
-            break;
-        case KC_7:
-            code_to_tap = KC_F7;
-            break;
-        case KC_8:
-            code_to_tap = KC_F8;
-            break;
-        case KC_9:
-            code_to_tap = KC_F9;
-            break;
-        case KC_0:
-            code_to_tap = KC_F10;
-            break;
-        case KC_MINS:
-            code_to_tap = KC_F11;
-            break;
-        case KC_EQL:
-            code_to_tap = KC_F12;
-            break;
-        default:
-            return false;
-    }
-
-    bool was_left_ctrl_held  = is_left_ctrl_held();
-    bool was_right_ctrl_held = is_right_ctrl_held();
-
-    if (was_left_ctrl_held) {
-        unregister_code(KC_LCTL);
-    }
-
-    if (was_right_ctrl_held) {
-        unregister_code(KC_RCTL);
-    }
-
-    if (record->event.pressed) {
-        register_code(code_to_tap);
-    } else {
-        unregister_code(code_to_tap);
-    }
-
-    if (was_left_ctrl_held) {
-        register_code(KC_LCTL);
-    }
-
-    if (was_right_ctrl_held) {
-        register_code(KC_RCTL);
-    }
-
-    return true;
-}
-
-void update_tracked_keys(uint16_t keycode, keyrecord_t *record) {
-    switch (keycode) {
-        case KC_LSFT:
-            if (record->event.pressed) {
-                set_left_shift_held();
-            } else {
-                set_left_shift_released();
-            }
-            break;
-        case KC_RSFT:
-            if (record->event.pressed) {
-                set_right_shift_held();
-            } else {
-                set_right_shift_released();
-            }
-            break;
-        case KC_LCTL:
-            if (record->event.pressed) {
-                set_left_ctrl_held();
-            } else {
-                set_left_ctrl_released();
-            }
-            break;
-        case KC_RCTL:
-            if (record->event.pressed) {
-                set_right_ctrl_held();
-            } else {
-                set_right_ctrl_released();
-            }
-            break;
-        case KC_LALT:
-            if (record->event.pressed) {
-                set_left_alt_held();
-            } else {
-                set_left_alt_released();
-            }
-            break;
-        case KC_RALT:
-            if (record->event.pressed) {
-                set_right_alt_held();
-            } else {
-                set_right_alt_released();
-            }
-            break;
-        case KC_BSPC:
-            if (record->event.pressed) {
-                set_backspace_held();
-            } else {
-                set_backspace_released();
-            }
-            break;
-    }
-}
-
-bool update_mod_convert(uint16_t keycode, uint16_t source, uint16_t other, uint16_t lmod, uint16_t rmod) {
+bool process_mod_convert(uint16_t keycode, uint16_t source, uint16_t other, uint16_t lmod, uint16_t rmod) {
     uint16_t valid   = source;
     uint16_t invalid = other;
 
-    const bool is_source_held = is_mod_held(source);
-    const bool is_lmod_held   = is_mod_held(lmod);
-    const bool is_rmod_held   = is_mod_held(rmod);
+    const bool is_source_held = is_keycode_pressed(source);
     if (!is_source_held) {
         unregister_code(source);
         unregister_code(other);
-
-        if (is_lmod_held) {
-            register_code(lmod);
-        }
-
-        if (is_rmod_held) {
-            register_code(rmod);
-        }
 
         return false;
     }
 
     const bool should_update = keycode == source || keycode == lmod || keycode == rmod;
     if (should_update) {
-        if (is_lmod_held || is_rmod_held) {
+        if (is_keycode_pressed(lmod) || is_keycode_pressed(rmod)) {
             invalid = valid;
             valid   = other;
         }
-
-        unregister_code(lmod);
-        unregister_code(rmod);
 
         register_code(valid);
         unregister_code(invalid);
@@ -264,72 +125,50 @@ bool update_mod_convert(uint16_t keycode, uint16_t source, uint16_t other, uint1
     return false;
 }
 
-bool process_mod_conversion(uint16_t source_key, uint16_t target_key, uint16_t left_mod, uint16_t right_mod, keyrecord_t *record) {
-    if (record->event.pressed) {
-        // Check if either left or right modifier key is held
-        if (keyboard_report->mods & (MOD_BIT(left_mod) | MOD_BIT(right_mod))) {
-            // Convert source_key to target_key
-            register_code(target_key);
-            unregister_code(source_key);
-        }
-    } else { // Key release event
-        // Check if either left or right modifier key is released
-        if (!(keyboard_report->mods & (MOD_BIT(left_mod) | MOD_BIT(right_mod)))) {
-            // Revert target_key to source_key
-            register_code(source_key);
-            unregister_code(target_key);
+bool process_mod_shortcut_group(uint16_t keycode, uint16_t lmod, uint16_t rmod, uint16_t sources[], uint16_t others[], int num) {
+    bool should_update = keycode == lmod || keycode == rmod;
+    if (!should_update) {
+        for (uint8_t i = 0; i < num; i++) {
+            if (sources[i] == keycode) {
+                should_update = true;
+                break;
+            }
         }
     }
-    return true;
-}
 
-bool update_ctrl_shortcuts(uint16_t keycode) {
-    // const bool was_left_ctrl_held  = is_left_ctrl_held();
-    // const bool was_right_ctrl_held = is_right_ctrl_held();
-    // if (was_left_ctrl_held) {
-    //     unregister_code(KC_LCTL);
-    // }
-    //
-    // if (was_right_ctrl_held) {
-    //     unregister_code(KC_RCTL);
-    // }
-    //
-    // bool       result          = false;
-    // const bool allow_shortcuts = !is_shift_held() && !is_alt_held();
-    // if (allow_shortcuts) {
-    //     if (update_backspace_delete(keycode)) {
-    //         result = true;
-    //     }
-    // }
-    //
-    // if (result) {
-    //     if (was_left_ctrl_held) {
-    //         register_code(KC_LCTL);
-    //     }
-    //     if (was_right_ctrl_held) {
-    //         register_code(KC_RCTL);
-    //     }
-    // }
-    //
-    // return result;
-    return true;
+    if (should_update) {
+        unregister_code(lmod);
+        unregister_code(rmod);
+    } else {
+        // uprintf("WILL NOT UPDATE: 0x%04X, num=%u", keycode);
+    }
+
+    bool result = false;
+    for (uint8_t i = 0; i < num; i++) {
+        if (process_mod_convert(keycode, sources[i], others[i], lmod, rmod)) {
+            result = true;
+        }
+    }
+
+    if (!result) {
+        if (is_keycode_pressed(lmod)) {
+            register_code(lmod);
+        }
+
+        if (is_keycode_pressed(rmod)) {
+            register_code(rmod);
+        }
+    }
+
+    return result;
 }
 
 bool state_base(uint16_t keycode, keyrecord_t *record) {
-    // if (try_register_function_key(keycode, record)) {
-    //     return false;
-    // }
-
-    // if (update_ctrl_shortcuts(keycode)) {
-    //     return false;
-    // }
-
-    if (update_mod_convert(keycode, KC_BSPC, KC_DEL, KC_LCTL, KC_RCTL)) {
+    uint16_t      ctl_sources[] = {KC_BSPC, KC_H, KC_J, KC_K, KC_L, KC_1, KC_2, KC_3, KC_4, KC_5, KC_6, KC_7, KC_8, KC_9, KC_0, KC_MINS, KC_EQL};
+    uint16_t      ctl_others[]  = {KC_DEL, KC_LEFT, KC_DOWN, KC_UP, KC_RIGHT, KC_F1, KC_F2, KC_F3, KC_F4, KC_F5, KC_F6, KC_F7, KC_F8, KC_F9, KC_F10, KC_F11, KC_F12};
+    const uint8_t num           = sizeof(ctl_sources) / sizeof(uint16_t);
+    if (process_mod_shortcut_group(keycode, KC_LCTL, KC_RCTL, ctl_sources, ctl_others, num)) {
         return false;
-    }
-
-    if (keycode == KC_INS) {
-        toggle_insert_active_state();
     }
 
     return true;
@@ -348,7 +187,7 @@ bool state_game(uint16_t keycode, keyrecord_t *record) {
 }
 
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
-    update_tracked_keys(keycode, record);
+    update_keycode(keycode, record);
 
     if (layer_state_is(GAME)) {
         return state_game(keycode, record);
@@ -359,28 +198,6 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     } else {
         return state_base(keycode, record);
     }
-
-    if (!layer_state_is(GAME) && try_register_function_key(keycode, record)) {
-        return false;
-    }
-
-    if (keycode == TG(FN) || keycode == TG(GAME)) {
-        return true;
-    }
-
-    if (layer_state_is(VIM) && !layer_state_is(FN)) {
-        if (handle_vim_mode(keycode, record)) {
-            return false;
-        }
-    } else { // insert key is ignored in VIM, so don't handle it if it's active
-        if (keycode == KC_INS) {
-            toggle_insert_active_state();
-            return true;
-        }
-    }
-
-    // return update_backspace_delete(keycode);
-    return true;
 }
 
 void process_combo_event(uint16_t combo_index, bool pressed) {
@@ -441,6 +258,10 @@ layer_state_t layer_state_set_user(layer_state_t state) {
 
     prev_layer = curr_layer;
     return state;
+}
+
+void matrix_init_user(void) {
+    initialize_keys_state(keymaps);
 }
 
 #ifdef DIP_SWITCH_ENABLE
