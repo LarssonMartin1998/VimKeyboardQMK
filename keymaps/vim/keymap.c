@@ -37,6 +37,13 @@
 #define HSV_FN 87, 205, 110    // green
 #define HSV_GAME 197, 205, 110 // purple
 
+struct mod_shortcut_group {
+    const uint16_t  size;
+    const uint16_t  mods[2];
+    const uint16_t *sources;
+    const uint16_t *others;
+};
+
 enum combo_events { CHANGE_TO_VIM_LAYER };
 
 const uint16_t PROGMEM change_to_vim_layer[] = {KC_LCTL, KC_ESC, COMBO_END};
@@ -56,7 +63,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     KC_LCTL,  KC_LOPT,  KC_LCMD,                                KC_SPC,                                 KC_RCMD,  TG(FN),   KC_RCTL,  KC_LEFT,  KC_DOWN,  KC_RGHT),
 
 [WIN] = LAYOUT_iso_83(
-    KC_INS,            KC_F1,    KC_F2,    KC_F3,    KC_F4,    KC_F5,    KC_F6,    KC_F7,    KC_F8,    KC_F9,    KC_F10,   KC_F11,   KC_F12,   KC_DEL,   KC_PGUP,
+    KC_PSCR,            KC_F1,    KC_F2,    KC_F3,    KC_F4,    KC_F5,    KC_F6,    KC_F7,    KC_F8,    KC_F9,    KC_F10,   KC_F11,   KC_F12,   KC_DEL,   KC_PGUP,
     KC_GRV,   KC_1,     KC_2,     KC_3,     KC_4,     KC_5,     KC_6,     KC_7,     KC_8,     KC_9,     KC_0,     KC_MINS,  KC_EQL,   KC_BSPC,            KC_HOME,
     KC_TAB,   KC_Q,     KC_W,     KC_E,     KC_R,     KC_T,     KC_Y,     KC_U,     KC_I,     KC_O,     KC_P,     KC_LBRC,  KC_RBRC,                      KC_END,
     KC_ESC,   KC_A,     KC_S,     KC_D,     KC_F,     KC_G,     KC_H,     KC_J,     KC_K,     KC_L,     KC_SCLN,  KC_QUOT,  KC_NUHS,  KC_ENT,             KC_PGDN,
@@ -125,11 +132,14 @@ bool process_mod_convert(uint16_t keycode, uint16_t source, uint16_t other, uint
     return false;
 }
 
-bool process_mod_shortcut_group(uint16_t keycode, uint16_t lmod, uint16_t rmod, uint16_t sources[], uint16_t others[], int num) {
-    bool should_update = keycode == lmod || keycode == rmod;
+bool process_mod_shortcut_group(uint16_t keycode, const struct mod_shortcut_group *shortcut_group) {
+    const uint8_t  num_mods      = 2;
+    const uint16_t lmod          = shortcut_group->mods[0];
+    const uint16_t rmod          = shortcut_group->mods[1];
+    bool           should_update = keycode == lmod || keycode == rmod;
     if (!should_update) {
-        for (uint8_t i = 0; i < num; i++) {
-            if (sources[i] == keycode) {
+        for (uint8_t i = 0; i < shortcut_group->size; i++) {
+            if (shortcut_group->sources[i] == keycode) {
                 should_update = true;
                 break;
             }
@@ -137,37 +147,66 @@ bool process_mod_shortcut_group(uint16_t keycode, uint16_t lmod, uint16_t rmod, 
     }
 
     if (should_update) {
-        unregister_code(lmod);
-        unregister_code(rmod);
-    } else {
-        // uprintf("WILL NOT UPDATE: 0x%04X, num=%u", keycode);
+        for (uint8_t i = 0; i < num_mods; i++) {
+            unregister_code(shortcut_group->mods[i]);
+        }
     }
 
     bool result = false;
-    for (uint8_t i = 0; i < num; i++) {
-        if (process_mod_convert(keycode, sources[i], others[i], lmod, rmod)) {
+    for (uint8_t i = 0; i < shortcut_group->size; i++) {
+        if (process_mod_convert(keycode, shortcut_group->sources[i], shortcut_group->others[i], lmod, rmod)) {
             result = true;
         }
     }
 
     if (!result) {
-        if (is_keycode_pressed(lmod)) {
-            register_code(lmod);
-        }
-
-        if (is_keycode_pressed(rmod)) {
-            register_code(rmod);
+        for (uint8_t i = 0; i < num_mods; i++) {
+            if (is_keycode_pressed(lmod)) {
+                register_code(shortcut_group->mods[i]);
+            }
         }
     }
 
     return result;
 }
 
+bool process_mod_shortcuts(uint16_t keycode, const struct mod_shortcut_group *mod_groups[]) {
+    for (size_t i = 0; mod_groups[i] != NULL; i++) {
+        if (process_mod_shortcut_group(keycode, mod_groups[i])) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 bool state_base(uint16_t keycode, keyrecord_t *record) {
-    uint16_t      ctl_sources[] = {KC_BSPC, KC_H, KC_J, KC_K, KC_L, KC_1, KC_2, KC_3, KC_4, KC_5, KC_6, KC_7, KC_8, KC_9, KC_0, KC_MINS, KC_EQL};
-    uint16_t      ctl_others[]  = {KC_DEL, KC_LEFT, KC_DOWN, KC_UP, KC_RIGHT, KC_F1, KC_F2, KC_F3, KC_F4, KC_F5, KC_F6, KC_F7, KC_F8, KC_F9, KC_F10, KC_F11, KC_F12};
-    const uint8_t num           = sizeof(ctl_sources) / sizeof(uint16_t);
-    if (process_mod_shortcut_group(keycode, KC_LCTL, KC_RCTL, ctl_sources, ctl_others, num)) {
+    const uint8_t typesize = sizeof(uint16_t);
+
+    const uint16_t ctl_sources[] = {KC_BSPC, KC_1, KC_2, KC_3, KC_4, KC_5, KC_6, KC_7, KC_8, KC_9, KC_0, KC_MINS, KC_EQL};
+    const uint16_t ctl_others[]  = {KC_DEL, KC_F1, KC_F2, KC_F3, KC_F4, KC_F5, KC_F6, KC_F7, KC_F8, KC_F9, KC_F10, KC_F11, KC_F12};
+    // clang-format off
+    const struct mod_shortcut_group ctl_group = {
+        .size = sizeof(ctl_sources) / typesize,
+        .mods = {KC_LCTL, KC_RCTL},
+        .sources = ctl_sources,
+        .others = ctl_others
+    };
+    // clang-format on
+
+    const uint16_t alt_sources[] = {KC_H, KC_J, KC_K, KC_L};
+    const uint16_t alt_others[]  = {KC_LEFT, KC_DOWN, KC_UP, KC_RIGHT};
+    // clang-format off
+    const struct mod_shortcut_group alt_group = {
+        .size = sizeof(alt_sources) / typesize,
+        .mods = {KC_LALT, KC_RALT},
+        .sources = alt_sources,
+        .others = alt_others
+    };
+    // clang-format on
+
+    const struct mod_shortcut_group *mod_groups[] = {&ctl_group, &alt_group, NULL};
+    if (process_mod_shortcuts(keycode, mod_groups)) {
         return false;
     }
 
