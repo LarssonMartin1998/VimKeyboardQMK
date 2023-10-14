@@ -1,10 +1,9 @@
 #include "utils.h"
-#include "keycode_map.h" // Include the keycode map
+#include "hash.h" // Include the keycode map
 
 #include "layers.h"
 #include "action.h"
 #include "keycodes.h"
-#include "keycode_map.h"
 
 #include QMK_KEYBOARD_H
 #include <stdint.h>
@@ -15,6 +14,9 @@
 
 static uint16_t default_layer = MAC;
 static bool     insert_active = false;
+
+static struct KeyValue keys_table[NUM_KEYS] = {[0 ... NUM_KEYS - 1] = {0, false}};
+static struct HashMap  keys                 = {.size = NUM_KEYS, .table = keys_table};
 
 void utils_set_default_layer(uint16_t new_default_layer) {
     default_layer = new_default_layer;
@@ -39,11 +41,11 @@ uint16_t get_os_key(uint16_t mac_alternative) {
 }
 
 bool is_left_shift_held(void) {
-    return keycode_map_lookup(KC_LSFT); // Use the keycode_map for lookup
+    return hashmap_lookup(&keys, KC_LSFT); // Use the keycode_map for lookup
 }
 
 bool is_right_shift_held(void) {
-    return keycode_map_lookup(KC_RSFT); // Use the keycode_map for lookup
+    return hashmap_lookup(&keys, KC_RSFT); // Use the keycode_map for lookup
 }
 
 bool is_shift_held(void) {
@@ -51,11 +53,11 @@ bool is_shift_held(void) {
 }
 
 bool is_left_ctrl_held(void) {
-    return keycode_map_lookup(KC_LCTL); // Use the keycode_map for lookup
+    return hashmap_lookup(&keys, KC_LCTL); // Use the keycode_map for lookup
 }
 
 bool is_right_ctrl_held(void) {
-    return keycode_map_lookup(KC_RCTL); // Use the keycode_map for lookup
+    return hashmap_lookup(&keys, KC_RCTL); // Use the keycode_map for lookup
 }
 
 bool is_ctrl_held(void) {
@@ -63,11 +65,11 @@ bool is_ctrl_held(void) {
 }
 
 bool is_left_alt_held(void) {
-    return keycode_map_lookup(KC_LALT); // Use the keycode_map for lookup
+    return hashmap_lookup(&keys, KC_LALT); // Use the keycode_map for lookup
 }
 
 bool is_right_alt_held(void) {
-    return keycode_map_lookup(KC_RALT); // Use the keycode_map for lookup
+    return hashmap_lookup(&keys, KC_RALT); // Use the keycode_map for lookup
 }
 
 bool is_alt_held(void) {
@@ -104,18 +106,10 @@ bool is_insert_active(void) {
     return insert_active;
 }
 
-void initialize_keys_state(const uint16_t keymaps[][MATRIX_ROWS][MATRIX_COLS]) {
-    keycode_map_init(); // Initialize the keycode_map
-}
-
 bool is_keycode_pressed(uint8_t keycode) {
-    return keycode_map_lookup(keycode); // Use the keycode_map for lookup
+    return hashmap_lookup(&keys, keycode); // Use the keycode_map for lookup
 }
 
 void update_keycode(uint16_t keycode, keyrecord_t *record) {
-    if (record->event.pressed) {
-        keycode_map_insert(keycode, true); // Use the keycode_map for insertion
-    } else {
-        keycode_map_insert(keycode, false); // Use the keycode_map for insertion
-    }
+    hashmap_insert(&keys, keycode, record->event.pressed); // Use the keycode_map for insertion
 }

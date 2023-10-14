@@ -19,7 +19,7 @@
 #include "action.h"
 #include "action_layer.h"
 #include "action_util.h"
-#include "debug.h"
+#include "hash.h"
 #include "keycodes.h"
 #include "keymap_us.h"
 #include "matrix.h"
@@ -33,7 +33,6 @@
 #include "utils.h"
 
 #define COMBO_STRICT_TIMER
-
 #define HSV_FN 87, 205, 110    // green
 #define HSV_GAME 197, 205, 110 // purple
 
@@ -45,12 +44,11 @@ struct mod_shortcut_group {
 };
 
 enum combo_events { CHANGE_TO_VIM_LAYER };
-
 const uint16_t PROGMEM change_to_vim_layer[] = {KC_LCTL, KC_ESC, COMBO_END};
+combo_t                key_combos[]          = {[CHANGE_TO_VIM_LAYER] = COMBO_ACTION(change_to_vim_layer)};
 
-combo_t key_combos[] = {[CHANGE_TO_VIM_LAYER] = COMBO_ACTION(change_to_vim_layer)};
-
-uint16_t prev_layer = MAC;
+uint8_t          prev_layer          = MAC;
+enum layer_state current_layer_state = LS_BASE;
 
 // clang-format off
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
@@ -104,7 +102,7 @@ void keyboard_post_init_user(void) {
     rgblight_mode_noeeprom(1);
 }
 
-bool process_mod_convert(uint16_t keycode, uint16_t source, uint16_t other, uint16_t lmod, uint16_t rmod) {
+static bool process_mod_convert(uint16_t keycode, uint16_t source, uint16_t other, uint16_t lmod, uint16_t rmod) {
     uint16_t valid   = source;
     uint16_t invalid = other;
 
@@ -132,7 +130,7 @@ bool process_mod_convert(uint16_t keycode, uint16_t source, uint16_t other, uint
     return false;
 }
 
-bool process_mod_shortcut_group(uint16_t keycode, const struct mod_shortcut_group *shortcut_group) {
+static bool process_mod_shortcut_group(uint16_t keycode, const struct mod_shortcut_group *shortcut_group) {
     const uint8_t  num_mods      = 2;
     const uint16_t lmod          = shortcut_group->mods[0];
     const uint16_t rmod          = shortcut_group->mods[1];
@@ -170,17 +168,18 @@ bool process_mod_shortcut_group(uint16_t keycode, const struct mod_shortcut_grou
     return result;
 }
 
-bool process_mod_shortcuts(uint16_t keycode, const struct mod_shortcut_group *mod_groups[]) {
-    for (size_t i = 0; mod_groups[i] != NULL; i++) {
-        if (process_mod_shortcut_group(keycode, mod_groups[i])) {
-            return true;
-        }
+static bool process_mod_shortcuts(const uint16_t keycode, const struct mod_shortcut_group *mod_groups[]) {
+    bool result = false;
+    for (uint8_t i = 0; mod_groups[i] != NULL; i++) {
+        result = result || process_mod_shortcut_group(keycode, mod_groups[i]);
     }
 
-    return false;
+    return result;
 }
 
-bool state_base(uint16_t keycode, keyrecord_t *record) {
+static bool state_base(uint16_t keycode, keyrecord_t *record) {
+    update_keycode(keycode, record);
+
     const uint8_t typesize = sizeof(uint16_t);
 
     const uint16_t ctl_sources[] = {KC_BSPC, KC_1, KC_2, KC_3, KC_4, KC_5, KC_6, KC_7, KC_8, KC_9, KC_0, KC_MINS, KC_EQL};
@@ -204,7 +203,6 @@ bool state_base(uint16_t keycode, keyrecord_t *record) {
         .others = alt_others
     };
     // clang-format on
-
     const struct mod_shortcut_group *mod_groups[] = {&ctl_group, &alt_group, NULL};
     if (process_mod_shortcuts(keycode, mod_groups)) {
         return false;
@@ -213,30 +211,23 @@ bool state_base(uint16_t keycode, keyrecord_t *record) {
     return true;
 }
 
-bool state_vim(uint16_t keycode, keyrecord_t *record) {
+static bool state_vim(uint16_t keycode, keyrecord_t *record) {
+    update_keycode(keycode, record);
     return true;
 }
 
-bool state_fn(uint16_t keycode, keyrecord_t *record) {
+static bool state_fn(uint16_t keycode, keyrecord_t *record) {
+    update_keycode(keycode, record);
     return true;
 }
 
-bool state_game(uint16_t keycode, keyrecord_t *record) {
+static bool state_game(uint16_t keycode, keyrecord_t *record) {
     return true;
 }
 
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
-    update_keycode(keycode, record);
-
-    if (layer_state_is(GAME)) {
-        return state_game(keycode, record);
-    } else if (layer_state_is(FN)) {
-        return state_fn(keycode, record);
-    } else if (layer_state_is(VIM)) {
-        return state_vim(keycode, record);
-    } else {
-        return state_base(keycode, record);
-    }
+    bool (*const layer_states[])(uint16_t, keyrecord_t *) = {state_base, state_vim, state_fn, state_game};
+    return layer_states[current_layer_state](keycode, record);
 }
 
 void process_combo_event(uint16_t combo_index, bool pressed) {
@@ -269,6 +260,7 @@ layer_state_t layer_state_set_user(layer_state_t state) {
         case WIN:
             update_hsv_from_mode();
             combo_enable();
+            current_layer_state = LS_BASE;
             break;
         case VIM:
             // Don't reinit VIM when coming from FN layer as we want to be able to switch between VIM & FN seamlessly.
@@ -283,24 +275,23 @@ layer_state_t layer_state_set_user(layer_state_t state) {
             }
 
             combo_disable();
+            current_layer_state = LS_VIM;
             break;
         case FN:
             rgblight_sethsv_noeeprom(HSV_FN);
             combo_enable();
+            current_layer_state = LS_FN;
             break;
         case GAME:
             set_current_mode_without_hsv(insert);
             rgblight_sethsv_noeeprom(HSV_GAME);
             combo_disable();
+            current_layer_state = LS_GAME;
             break;
     }
 
     prev_layer = curr_layer;
     return state;
-}
-
-void matrix_init_user(void) {
-    initialize_keys_state(keymaps);
 }
 
 #ifdef DIP_SWITCH_ENABLE
@@ -313,6 +304,8 @@ bool dip_switch_update_user(uint8_t index, bool active) {
         set_current_mode(insert);
         layer_clear();
         utils_set_default_layer(new_layer);
+
+        current_layer_state = LS_BASE;
     }
 
     return false;

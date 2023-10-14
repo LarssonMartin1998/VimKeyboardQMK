@@ -7,3 +7,10 @@ enum layers {
     FN,
     GAME,
 };
+
+enum layer_state {
+    LS_BASE = 0,
+    LS_VIM,
+    LS_FN,
+    LS_GAME,
+};

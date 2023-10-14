@@ -21,4 +21,4 @@ SRC += delete_mode.c
 SRC += replace_mode.c
 SRC += yank_mode.c
 SRC += goto_vimlayer.c
-SRC += keycode_map.c
+SRC += hash.c
